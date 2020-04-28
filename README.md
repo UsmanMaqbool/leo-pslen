@@ -8,7 +8,7 @@ git clone https://github.com/vlfeat/matconvnet.git # follow full compilation tut
 git clone https://github.com/Relja/netvlad.git
 
 git clone https://github.com/zchrissirhcz/edges # Not official edges, but fixed error for matlab > 2017
-in matlab 'cd edges' and 'run linux_startup.m'
+in matlab 'cd edges' and 'run linux_startup.m' and replace the 'edgeBoxes.m' with our edges boxes (to get the edges images as well')
 git clone https://github.com/zchrissirhcz/toolbox.git
 in matlab 'cd toolbox' and 'run linux_startup.m'
 

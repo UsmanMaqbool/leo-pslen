@@ -1,5 +1,5 @@
 clc;
-clear all;
+%clear all;
 
 addpath(genpath(pwd));
 setup; 

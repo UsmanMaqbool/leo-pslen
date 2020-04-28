@@ -24,10 +24,9 @@
     % detect blackish images  ( plot the boxes)
     % rearrange + use previous knowledge
     
-    Top_boxes = 10;
     %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
 
-    iTestSample_Start=24; startfrom =3; show_output = 4;  
+    iTestSample_Start=13; startfrom =1; show_output = 0;  %test the boxes
   % iTestSample_Start=1; startfrom =1; show_output = 3;   
     %% LEO START
     
@@ -65,13 +64,16 @@
 
     
     
-    
+    Top_boxes = 50;
+
     top_100 = [];
-    
-    dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-    save_path = '/home/leo/docker_ws/datasets/vt-2';
-    
+    total_top = 100; %100;
  
+%     dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
+%     save_path = '/home/leo/docker_ws/datasets/vt-3';
+%     
+     dataset_path = 'datasets/Test_247_Tokyo_GSV';
+     save_path = 'datasets/vt-3'; 
 
     for iTestSample= iTestSample_Start:length(toTest)
         
@@ -102,43 +104,58 @@
         
         if exist(q_feat, 'file')
             load(q_feat);
+            imgg_mat_box_q = bbox;
         else
-            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
+            %im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
-            I = uint8(im{1,1});
-            [bbox, E] =edgeBoxes(I,model);
-            [wd, hh] = size(im{1,1});
+           % I = uint8(im{1,1});
+            %[bbox, ~] =edgeBoxes(I,model);
+            
+            [bbox,im, E, wd, hh] = img_Bbox(qimg_path,model);
+            
+          %  [wd, hh] = size(im{1,1});
             mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
             query_full_feat= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
 
-            save(q_feat,'query_full_feat');
+            save(q_feat,'query_full_feat', 'bbox', 'E');
         end
-        total_top = 100; %100;
- 
+      
         q_dbfeat = strrep(q_feat,'.mat','_db_feats.mat');
         if exist(q_dbfeat, 'file')
-            load(q_dbfeat);
+            q_dbfeat_All = load(q_dbfeat);
+           
+
         else
             % Top 100 sample
             for jj = 1:total_top
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-                    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-                    I = uint8(im{1,1});
-                    [bbox, E] =edgeBoxes(I,model);
-                    [wd, hh] = size(im{1,1});
+%                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
+%                     I = uint8(im{1,1});
+%                     [bbox, E] =edgeBoxes(I,model);
+                       
+                    [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
+                   
                     mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
                     im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
                     feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
                     feats_file(jj) = struct ('featsdb', feats); 
+                    bbox_file(jj) = struct ('bboxdb', bbox); 
+                    Edge_images(jj) = struct ('Edges', E); 
                     clear feats;
-                    fprintf( '==>> %i ~ %i/%i ',jj,iTestSample,total_top );
+                    
+
+                    fprintf( '==>> %i ~ %i/%i \n',jj,iTestSample,total_top );
 
             end
-            save(q_dbfeat,'feats_file');
+            save(q_dbfeat,'feats_file','bbox_file', 'Edge_images');
+            clear feats_file;
+            clear bbox_file;  
+            clear Edge_images;  
+             q_dbfeat_All = load(q_dbfeat);
             
         end
         SLEN_top = zeros(total_top,2); 
@@ -147,7 +164,8 @@
        % figure;
 
         for i=startfrom:total_top 
-            feats2 = feats_file(i).featsdb;
+            feats2 = q_dbfeat_All.feats_file(i).featsdb;
+            
             for j = 1:Top_boxes
                 q1 = single(feats2(:,j));  %take column of each box
                 [ids1, ds1]= yael_nn(query_full_feat, q1, k);
@@ -278,7 +296,8 @@
                 fprintf('%f -> %f %f %f %f %f %f %f %f \n',D_diff,D_diff+ S_less_mean,D_diff+ S_less_n_mean, D_diff+S_less_inv_mean,D_diff+ S_less_inv_n_mean,D_diff+ S_less_diff,D_diff+ S_less_n_diff, D_diff+S_less_inv_diff,D_diff+ S_less_inv_n_diff);
 
             end
-            
+                 
+             
          %   exp3_diff = diff2_ds_all*ds_pre_inv;
           %  exp3_diff = ds_all(1:Top_boxes-2,:)-exp3_diff;
            % exp3_diff = exp3_diff+D_diff;
@@ -368,7 +387,55 @@
                     end
                    
                end
-               
+               if show_output == 44
+                 
+                
+               % imgg_mat_box_q = img_Bbox(qimg_path,model);
+               % imgg_mat_box_db = img_Bbox(db_img,model);
+                [row,col,value] = find(diff_s_less~=0);
+                
+                q_imgg = imread(char(qimg_path));
+              
+
+                db_imgg = imread(char(db_img));
+              
+                
+                qqq_img = q_imgg;
+                dbb_img = db_imgg;
+                
+                box_var_db = [];
+                box_var_q = [];
+                
+                for jjj=1:length(row) %Top_boxes
+                    
+                    qq_img = draw_boxx(q_imgg,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    dd_img = draw_boxx(db_imgg,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    
+                    qqq_img = draw_boxx(qqq_img,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    dbb_img = draw_boxx(dbb_img,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    
+                    
+                    bb_q = imgg_mat_box_q(col(jjj),1:4);
+                    
+                    box_var_q = [box_var_q ; imgg_mat_box_q(col(jjj),1:4) (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2 ];
+                    
+                    bb_db = imgg_mat_box_db(row(jjj),1:4);
+                    
+                    box_var_db = [box_var_db ; imgg_mat_box_db(row(jjj),1:4) (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2 ];
+                  %  subplot(2,2,1); imshow(qq_img); %q_img
+                  %  subplot(2,2,2); imshow(dd_img); %
+                    
+                  
+                  
+                end
+                std_box_var_q = std(im2double(box_var_q),0,1);
+                subplot(2,2,1); bar(std_box_var_q(3:6)); %q_img
+                std_box_var_db = std(im2double(box_var_db),0,1);
+                subplot(2,2,2); bar(std_box_var_db(3:6)); %q_img
+                
+                  subplot(2,2,3); imshow(qqq_img); %q_img
+                    subplot(2,2,4); imshow(dbb_img); %
+                end  
            % if check_heat >= 1
                
             if num_var_s5 < 3 
@@ -390,86 +457,22 @@
                  db_imgg = imread(char(db_img));
                 subplot(2,3,2); imshow(db_imgg); %
                 
-                q_imgg_mat_box = img_Bbox(q_imgg);
+               
                 
                 subplot(2,3,3); h = heatmap(S8);
                 subplot(2,3,4); h = heatmap(y); % with plus is wokring
                 subplot(2,3,5); h = heatmap(S3);
-               end
-            
-           ds_new_top(i,1) = abs(D_diff);
+              
+                
+             end
+         
              
+             
+           ds_new_top(i,1) = abs(D_diff);
+           
 
          ds_all = [];
-%                S3_diff = diff(S3);
-%                
-%                Var_S5 = var(S3,1);
-%                num_var_s5 = nnz(Var_S5);
-%                sum_var_s5 = sum(Var_S5);
-%                mum_var_s5 = num_var_s5*sum_var_s5;
-%                
-%                Var_var_S5 = var(Var_S5);
-%                
-%                D_diff = ds_pre(i,1);
-%                
-%                sum_diff2_ds_all = sum(diff2_ds_all);
-%                
-%                
-%                
-%                for jj = 1:Top_boxes
-%                   
-%                    S3_nnz = nnz(S3(:,jj));
-%                    if S3_nnz < 2
-%                        sum_diff2_ds_all(jj) = 0;
-%                        
-%                    end
-%                    
-%                    
-%                end
-%                nnz_black_check = nnz(sum_diff2_ds_all);
-%                
-%                top_candidates = sum_diff2_ds_all;
-%               % top_candidates(sum_diff2_ds_all> -0.03)=0;
-%                
-%                 s_delta_all = 0;
-% 
-% 
-%                 s_delta_mat = 0;
-%                 s_dis = 0;
-%                 for jj = 1:Top_boxes
-%                 S_less_col = S3(:,jj);
-%                 s_near_mat = [];
-%                 for jjj = 1:Top_boxes-1
-% %                  
-%                 end
-% %                % s_delta_mat = [s_delta_mat s_near_mat];
-% %                 s_near_mat = [];
-%                end
-% %                    
-%             
-%                
-%                
-%                
-%              % heat3 = diff2_ds_all_less*ds_pre_inv;
-%               %check_heat = sum(S8(2,:,:));
-%               check_heat = 0;
-%               %D_diff = ds_pre(i,1)-; %-s_delta_all;
-%                for jj = 1:Top_boxes
-%                    S8_col = S8(:,jj);
-%                    check_heat_mean = mean(S8_col);
-% 
-%                     S8_col(S8_col<check_heat_mean) = 0;
-% 
-%                     hm = nnz(S8_col);
-%                     if hm >= 2 
-%                         check_heat = check_heat+ sum(S8_col);
-%                     end
-%                end
-%                
-%           
-% 
-
-
+         
         end
         
         %  SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
@@ -539,6 +542,9 @@
         
         
         iTestSample
+        clear feats2 ;
+         clear q_dbfeat_All;
+
         %% LEO END
             
             
@@ -646,10 +652,62 @@ caxis([-0.2 0.2]);
 colorbar
 end
 
-function mat_boxes = img_Bbox(db_img)
+function [mat_boxes,im, edge_image, wd, hh] = img_Bbox(db_img,model)
 im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
 I = uint8(im{1,1});
 [bbox, E] =edgeBoxes(I,model);
 [wd, hh] = size(im{1,1});
-mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
+edge_image = uint8(E * 255);
+bboxes=[];
+gt=[111	98	25	101];
+
+b_size = size(bbox,1); 
+for ii=1:b_size
+     bb=bbox(ii,:);
+     square = bb(3)*bb(4);
+     if square <2*gt(3)*gt(4)
+        bboxes=[bbox;bb];
+     end
+end
+
+mat_boxes = uint8(bboxes); 
+end
+
+function img = draw_boxx(I,bb)
+
+%bb(1)
+%bb(2)
+%bb(3)+bb(1)
+%bb(4)+bb(2)
+
+bb=[bb(1) bb(2) bb(3)+bb(1) bb(4)+bb(2)];
+%bb
+% 
+% y1 = bb(1)+3;
+% y2 = bb(1)+bb(3)-3;
+% x1 = bb(2)+3;
+% x2 = bb(2)+bb(4)-3;
+% 
+% if x1 == 0
+%     x1 = 1;
+% end
+% if y1 == 0
+%     y1 = 1;
+% end
+% if x2 > 30
+%     x2 = 30;
+% end
+% if y2 > 40
+%     y2 = 40;
+% end
+% if bboxes(3) < 2 && x2 > 30
+%     x1 = x1-2;
+% end
+% if bboxes(4) < 2 && y2 > 40
+%     y1 = y1-2;
+% end
+
+
+img = insertShape(I,'Rectangle',bb,'LineWidth',3);
+
 end
