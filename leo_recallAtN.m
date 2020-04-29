@@ -25,7 +25,7 @@
     % rearrange + use previous knowledge
     
     %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
-     vt_type = 2;
+     vt_type = 3;
     iTestSample_Start=1; startfrom =1; show_output = 0;  %test the boxes
   % iTestSample_Start=1; startfrom =1; show_output = 3;   
     %% LEO START
@@ -116,14 +116,14 @@
             imgg_mat_box_q = bbox;
             end
         else
-            %im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
+            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
-           % I = uint8(im{1,1});
-            %[bbox, ~] =edgeBoxes(I,model);
+           I = uint8(im{1,1});
+            [bbox, E] =edgeBoxes(I,model);
             
-            [bbox,im, E, wd, hh] = img_Bbox(qimg_path,model);
+           % [bbox,im, E, wd, hh] = img_Bbox(qimg_path,model);
             
-          %  [wd, hh] = size(im{1,1});
+            [wd, hh] = size(im{1,1});
             mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
@@ -154,11 +154,11 @@
             for jj = 1:total_top
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-%                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-%                     I = uint8(im{1,1});
-%                     [bbox, E] =edgeBoxes(I,model);
+                    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
+                    I = uint8(im{1,1});
+                    [bbox, E] =edgeBoxes(I,model);
                        
-                    [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
+                  %  [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
                    
                     mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
