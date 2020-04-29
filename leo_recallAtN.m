@@ -25,8 +25,8 @@
     % rearrange + use previous knowledge
     
     %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
-
-    iTestSample_Start=13; startfrom =1; show_output = 0;  %test the boxes
+     vt_type = 2;
+    iTestSample_Start=1; startfrom =1; show_output = 0;  %test the boxes
   % iTestSample_Start=1; startfrom =1; show_output = 3;   
     %% LEO START
     
@@ -64,16 +64,24 @@
 
     
     
-    Top_boxes = 50;
+    Top_boxes = 10;
 
     top_100 = [];
     total_top = 100; %100;
  
-%     dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-%     save_path = '/home/leo/docker_ws/datasets/vt-3';
-%     
-     dataset_path = 'datasets/Test_247_Tokyo_GSV';
+    %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
+    dataset_path = 'datasets/Test_247_Tokyo_GSV';
      save_path = 'datasets/vt-3'; 
+   
+    if vt_type == 2
+         %save_path = '/home/leo/docker_ws/datasets/vt-2';
+        save_path = 'datasets/vt-2'; 
+    elseif vt_type == 3
+        % save_path = '/home/leo/docker_ws/datasets/vt-3';
+         save_path = 'datasets/vt-3'; 
+    end
+    
+ 
 
     for iTestSample= iTestSample_Start:length(toTest)
         
@@ -104,7 +112,9 @@
         
         if exist(q_feat, 'file')
             load(q_feat);
+            if vt_type == 3
             imgg_mat_box_q = bbox;
+            end
         else
             %im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
@@ -118,14 +128,26 @@
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
             query_full_feat= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
-
+            
+            if vt_type == 2
+            save(q_feat,'query_full_feat');
+ 
+            end
+            
+            if vt_type == 3
             save(q_feat,'query_full_feat', 'bbox', 'E');
+            end
         end
       
         q_dbfeat = strrep(q_feat,'.mat','_db_feats.mat');
         if exist(q_dbfeat, 'file')
-            q_dbfeat_All = load(q_dbfeat);
-           
+            if vt_type == 2
+                    load(q_dbfeat); 
+            end
+            
+            if vt_type == 3
+                    q_dbfeat_all = load(q_dbfeat);
+            end
 
         else
             % Top 100 sample
@@ -146,17 +168,20 @@
                     bbox_file(jj) = struct ('bboxdb', bbox); 
                     Edge_images(jj) = struct ('Edges', E); 
                     clear feats;
-                    
-
-                    fprintf( '==>> %i ~ %i/%i \n',jj,iTestSample,total_top );
+                    fprintf( '==>> %i ~ %i/%i ',jj,iTestSample,total_top );
 
             end
-            save(q_dbfeat,'feats_file','bbox_file', 'Edge_images');
-            clear feats_file;
-            clear bbox_file;  
-            clear Edge_images;  
-             q_dbfeat_All = load(q_dbfeat);
             
+            if vt_type == 2
+                  save(q_dbfeat,'feats_file');
+
+            end
+            
+            if vt_type == 3
+                save(q_dbfeat,'feats_file','bbox_file', 'Edge_images');
+                q_dbfeat_all = load(q_dbfeat);
+
+            end
         end
         SLEN_top = zeros(total_top,2); 
         k = Top_boxes;
@@ -164,8 +189,15 @@
        % figure;
 
         for i=startfrom:total_top 
-            feats2 = q_dbfeat_All.feats_file(i).featsdb;
+            if vt_type == 2
+             feats2 = feats_file(i).featsdb;
+
+            end
             
+            if vt_type == 3
+            feats2 = q_dbfeat_all.feats_file(i).featsdb;
+            imgg_mat_box_db = q_dbfeat_all.bbox_file(i).bboxdb;
+            end
             for j = 1:Top_boxes
                 q1 = single(feats2(:,j));  %take column of each box
                 [ids1, ds1]= yael_nn(query_full_feat, q1, k);
@@ -387,11 +419,8 @@
                     end
                    
                end
-               if show_output == 44
+               if show_output == 45
                  
-                
-               % imgg_mat_box_q = img_Bbox(qimg_path,model);
-               % imgg_mat_box_db = img_Bbox(db_img,model);
                 [row,col,value] = find(diff_s_less~=0);
                 
                 q_imgg = imread(char(qimg_path));
@@ -406,47 +435,45 @@
                 box_var_db = [];
                 box_var_q = [];
                 
-                for jjj=1:length(row) %Top_boxes
-                    
-                    qq_img = draw_boxx(q_imgg,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
-                    dd_img = draw_boxx(db_imgg,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
-                    
-                    qqq_img = draw_boxx(qqq_img,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
-                    dbb_img = draw_boxx(dbb_img,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
-                    
-                    
-                    bb_q = imgg_mat_box_q(col(jjj),1:4);
-                    
-                    box_var_q = [box_var_q ; imgg_mat_box_q(col(jjj),1:4) (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2 ];
-                    
-                    bb_db = imgg_mat_box_db(row(jjj),1:4);
-                    
-                    box_var_db = [box_var_db ; imgg_mat_box_db(row(jjj),1:4) (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2 ];
-                  %  subplot(2,2,1); imshow(qq_img); %q_img
-                  %  subplot(2,2,2); imshow(dd_img); %
-                    
-                  
-                  
-                end
+                        for jjj=1:length(row) %Top_boxes
+
+                            qq_img = draw_boxx(q_imgg,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                            dd_img = draw_boxx(db_imgg,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+
+                            qqq_img = draw_boxx(qqq_img,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                            dbb_img = draw_boxx(dbb_img,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+
+
+                            bb_q = imgg_mat_box_q(col(jjj),1:4);
+
+                            box_var_q = [box_var_q ; imgg_mat_box_q(col(jjj),1:4) (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2 ];
+
+                            bb_db = imgg_mat_box_db(row(jjj),1:4);
+
+                            box_var_db = [box_var_db ; imgg_mat_box_db(row(jjj),1:4) (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2 ];
+                          %  subplot(2,2,1); imshow(qq_img); %q_img
+                          %  subplot(2,2,2); imshow(dd_img); %
+
+
+
+                        end
                 std_box_var_q = std(im2double(box_var_q),0,1);
-                subplot(2,2,1); bar(std_box_var_q(3:6)); %q_img
+                subplot(2,2,1); bar(std_box_var_q); %q_img
                 std_box_var_db = std(im2double(box_var_db),0,1);
-                subplot(2,2,2); bar(std_box_var_db(3:6)); %q_img
+                subplot(2,2,2); bar(std_box_var_db); %q_img
                 
                   subplot(2,2,3); imshow(qqq_img); %q_img
                     subplot(2,2,4); imshow(dbb_img); %
                 end  
-           % if check_heat >= 1
                
             if num_var_s5 < 3 
                 D_diff = D_diff-mum_var_s5;
             end
               
-            if inegatif == 100  && num_var_s5 < 5  && nnz_black_check > 0
+            if inegatif == 100  && num_var_s5 < 5 
               D_diff = norm(D_diff-sum(S8(:))); 
             end
             
-           % end
             
 
              if show_output == 4
@@ -472,7 +499,6 @@
            
 
          ds_all = [];
-         
         end
         
         %  SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
@@ -542,9 +568,6 @@
         
         
         iTestSample
-        clear feats2 ;
-         clear q_dbfeat_All;
-
         %% LEO END
             
             
