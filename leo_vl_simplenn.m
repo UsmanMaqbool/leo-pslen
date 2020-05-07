@@ -1,4 +1,4 @@
-function [res, res_b] = leo_vl_simplenn(net, x, bboxes, dzdy, res, varargin)
+function [res, res_b] = leo_vl_simplenn(net, x, bboxes, num_box, dzdy, res, varargin)
 %VL_SIMPLENN  Evaluate a SimpleNN network.
 %   RES = VL_SIMPLENN(NET, X) evaluates the convnet NET on data X.
 %   RES = VL_SIMPLENN(NET, X, DZDY) evaluates the convnent NET and its
@@ -283,7 +283,7 @@ if nargin <= 3 || isempty(res)
     'backwardTime', num2cell(zeros(1,n+1))) ;
 
 
-  res_b(1:49) = { struct(...
+  res_b(1:num_box) = { struct(...
     'x', cell(1,n+1), ...
     'dzdx', cell(1,n+1), ...
     'dzdw', cell(1,n+1), ...
@@ -324,7 +324,7 @@ for i=1:n
    % hrr = gather(R);
     %h = heatmap(hrr);
     %h.Colormap = parula
-    for ii=1:49
+    for ii=1:num_box
     res_b1 = res_b{1,ii}(i).x;
     res_b1 = net_box(i,res(i).x,res_b1,bboxes(ii,:));
     res_b{1,ii}(i).x = res_b1(i).x;
@@ -341,7 +341,7 @@ for i=1:n
         cudnn{:}) ;
         
         if i == 34
-            for ii=1:49
+            for ii=1:num_box
                 res_b{1,ii}(i+1).x = vl_nnconv(res_b{1,ii}(i).x, l.weights{1}, l.weights{2}, ...
                 'pad', l.pad, ...
                 'stride', l.stride, ...
@@ -368,7 +368,7 @@ for i=1:n
 
     case {'normalize', 'lrn'}
       res(i+1).x = vl_nnnormalize(res(i).x, l.param) ;
-      for ii=1:49
+      for ii=1:num_box
         res_b{1,ii}(i+1).x = vl_nnnormalize( res_b{1,ii}(i).x, l.param) ;
       end
     case 'softmax'
@@ -422,7 +422,7 @@ for i=1:n
     case 'custom'
       res(i+1) = l.forward(l, res(i), res(i+1)) ;
 %       res_b1(i+1) = l.forward(l, res_b1(i),res_b1(i+1)) ;
-      for ii=1:49
+      for ii=1:num_box
         res_b{1,ii}(i+1) = l.forward(l, res_b{1,ii}(i),res_b{1,ii}(i+1)) ;
       end
       
@@ -443,7 +443,7 @@ for i=1:n
   if forget
     res(i).x = [] ;
     
-    for ii=1:49
+    for ii=1:num_box
         res_b{1,ii}(i).x = [];
     end
   end

@@ -1,6 +1,6 @@
-function [recall, rankloss, allRecalls, opts]= leo_slen_testFromFn(db, dbFeatFn, qFeatFn, opts, varargin)
+function [recall, rankloss, allRecalls, opts]= leo_slen_testFromFn(db, dbFeatFn, qFeatFn, plen_opts, opts, varargin)
     
-    if nargin<4 || isempty(opts)
+    if nargin<5 || isempty(opts)
         % a bit hacky but fine..
         opts= struct(...
             'nTestRankSample', 0, ...
@@ -35,5 +35,5 @@ function [recall, rankloss, allRecalls, opts]= leo_slen_testFromFn(db, dbFeatFn,
     else
         rankloss= [];
     end
-    [recall, allRecalls]= leo_testCore(db, qFeat, dbFeat, 'nTestSample', opts.nTestSample, 'recallNs', opts.recallNs);
+    [recall, allRecalls]= leo_testCore(db, qFeat, dbFeat,plen_opts, 'nTestSample', opts.nTestSample, 'recallNs', opts.recallNs);
 end

@@ -1,4 +1,4 @@
- function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db)
+ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,plen_opts)
     if nargin<6, nSample= inf; end
     
     rngState= rng;
@@ -24,13 +24,15 @@
     % detect blackish images  ( plot the boxes)
     % rearrange + use previous knowledge
     
-    %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
-     vt_type = 3;
-    iTestSample_Start=1; startfrom =1; show_output = 0;  %test the boxes
-  % iTestSample_Start=1; startfrom =1; show_output = 3;   
+
+    
+    vt_type = plen_opts.vt_type;
+    iTestSample_Start=plen_opts.iTestSample_Start; startfrom =plen_opts.startfrom; show_output = plen_opts.show_output;  %test the boxes
+     dataset_path = plen_opts.dataset_path; 
+     save_path = plen_opts.save_path; 
     %% LEO START
     
-    netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
+    netID= plen_opts.netID;
     % netID= 'caffe_tokyoTM_conv5_vlad_preL2_intra_white';
 
 
@@ -45,7 +47,7 @@
     
     
     
-    addpath(genpath('/mnt/02/docker_ws/docker_ws/netvlad/slen-0.2-box'));
+    %addpath(genpath('/mnt/02/docker_ws/docker_ws/netvlad/slen-0.2-box'));
     
     %% EDGE BOX
     %load pre-trained edge detection model and set opts (see edgesDemo.m)
@@ -61,7 +63,7 @@
     gt=[111	98	25	101];
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
-
+    num_box = 9; % Total = 10 (first one is the full images feature / box)
     
     
     Top_boxes = 10;
@@ -69,18 +71,8 @@
     top_100 = [];
     total_top = 100; %100;
  
-    %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-    dataset_path = 'datasets/Test_247_Tokyo_GSV';
-     save_path = 'datasets/vt-3'; 
    
-    if vt_type == 2
-         %save_path = '/home/leo/docker_ws/datasets/vt-2';
-        save_path = 'datasets/vt-2'; 
-    elseif vt_type == 3
-        % save_path = '/home/leo/docker_ws/datasets/vt-3';
-         save_path = 'datasets/vt-3'; 
-    end
-    
+  
  
 
     for iTestSample= iTestSample_Start:length(toTest)
@@ -98,7 +90,7 @@
        
         %% Leo START
                 
-        qimg_path = strcat(dataset_path,'/query/', db.qImageFns{iTestSample, 1});  
+        qimg_path = strcat(dataset_path,'/queries/', db.qImageFns{iTestSample, 1});  
         q_img = strcat(save_path,'/', db.qImageFns{iTestSample, 1});  
         q_feat = strrep(q_img,'.jpg','.mat');
         
@@ -127,7 +119,7 @@
             mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-            query_full_feat= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
+            query_full_feat= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
             
             if vt_type == 2
             save(q_feat,'query_full_feat');
@@ -135,6 +127,10 @@
             end
             
             if vt_type == 3
+                check_folder = fileparts(q_feat);
+                if ~exist(check_folder, 'dir')
+                   mkdir(check_folder)
+                end
             save(q_feat,'query_full_feat', 'bbox', 'E');
             end
         end
@@ -157,18 +153,18 @@
                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
                     I = uint8(im{1,1});
                     [bbox, E] =edgeBoxes(I,model);
-                       
+                     [wd, hh] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
                   %  [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
                    
                     mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
-
+                    
                     im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-                    feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
+                    feats= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
                     feats_file(jj) = struct ('featsdb', feats); 
                     bbox_file(jj) = struct ('bboxdb', bbox); 
                     Edge_images(jj) = struct ('Edges', E); 
                     clear feats;
-                    fprintf( '==>> %i ~ %i/%i ',jj,iTestSample,total_top );
+                    fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
 
             end
             
@@ -178,6 +174,10 @@
             end
             
             if vt_type == 3
+                check_folder = fileparts(q_dbfeat);
+                if ~exist(check_folder, 'dir')
+                   mkdir(check_folder)
+                end
                 save(q_dbfeat,'feats_file','bbox_file', 'Edge_images');
                 q_dbfeat_all = load(q_dbfeat);
 
@@ -698,38 +698,7 @@ end
 
 function img = draw_boxx(I,bb)
 
-%bb(1)
-%bb(2)
-%bb(3)+bb(1)
-%bb(4)+bb(2)
-
 bb=[bb(1) bb(2) bb(3)+bb(1) bb(4)+bb(2)];
-%bb
-% 
-% y1 = bb(1)+3;
-% y2 = bb(1)+bb(3)-3;
-% x1 = bb(2)+3;
-% x2 = bb(2)+bb(4)-3;
-% 
-% if x1 == 0
-%     x1 = 1;
-% end
-% if y1 == 0
-%     y1 = 1;
-% end
-% if x2 > 30
-%     x2 = 30;
-% end
-% if y2 > 40
-%     y2 = 40;
-% end
-% if bboxes(3) < 2 && x2 > 30
-%     x1 = x1-2;
-% end
-% if bboxes(4) < 2 && y2 > 40
-%     y1 = y1-2;
-% end
-
 
 img = insertShape(I,'Rectangle',bb,'LineWidth',3);
 
