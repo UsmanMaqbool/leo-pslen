@@ -63,10 +63,10 @@
     gt=[111	98	25	101];
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
-    num_box = 9; % Total = 10 (first one is the full images feature / box)
+    num_box = 49; % Total = 10 (first one is the full images feature / box)
     
     
-    Top_boxes = 10;
+    Top_boxes = 10; % will be used.
 
     top_100 = [];
     total_top = 100; %100;
@@ -103,106 +103,120 @@
         end
         
         if exist(q_feat, 'file')
-            load(q_feat);
-            if vt_type == 3
-            imgg_mat_box_q = bbox;
-            end
+             x_q_feat = load(q_feat);
+             
         else
             im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
-           I = uint8(im{1,1});
-            [bbox, E] =edgeBoxes(I,model);
+            I = uint8(im{1,1});
+            [bbox, ~] =edgeBoxes(I,model);
             
            % [bbox,im, E, wd, hh] = img_Bbox(qimg_path,model);
             
             [wd, hh] = size(im{1,1});
+            
             mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
             query_full_feat= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
             
-            if vt_type == 2
-            save(q_feat,'query_full_feat');
- 
-            end
+            q_bbox = [1 1 hh wd 1 ; bbox];
+            q_bbox = q_bbox (1:num_box+1,:);
             
-            if vt_type == 3
-                check_folder = fileparts(q_feat);
-                if ~exist(check_folder, 'dir')
-                   mkdir(check_folder)
-                end
-            save(q_feat,'query_full_feat', 'bbox', 'E');
-            end
-        end
-      
-        q_dbfeat = strrep(q_feat,'.mat','_db_feats.mat');
-        if exist(q_dbfeat, 'file')
-            if vt_type == 2
-                    load(q_dbfeat); 
-            end
-            
-            if vt_type == 3
-                    q_dbfeat_all = load(q_dbfeat);
-            end
 
-        else
+            k = Top_boxes;
+            
+            
             % Top 100 sample
+            
             for jj = 1:total_top
+                
+                    ds_all_full = [];
+                    ids_all = [];
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
                     I = uint8(im{1,1});
-                    [bbox, E] =edgeBoxes(I,model);
-                     [wd, hh] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
+                    [bbox, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
+                    [wd, hh] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
                   %  [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
                    
                     mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
                     
                     im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
                     feats= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
-                    feats_file(jj) = struct ('featsdb', feats); 
-                    bbox_file(jj) = struct ('bboxdb', bbox); 
-                    Edge_images(jj) = struct ('Edges', E); 
-                    clear feats;
+                    db_bbox = [1 1 hh wd 1 ; bbox];
+                    db_bbox = db_bbox (1:num_box+1,:);
+
+                    db_bbox_file(jj) = struct ('bboxdb', db_bbox); 
+                   
                     fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
+                    
+                   
+                    for j = 1:Top_boxes
+                        q1 = single(feats(:,j));  %take column of each box
+                        [ids1, ds1, top1]= leo_yael_nn(query_full_feat, q1, k);
 
+                        ids1 = [1 ; ids1];          %Take to element
+                        ds1 = [top1 ; ds1];         % top element feature
+
+                        ids_all = [ids_all ids1];
+                        ds_all_full = [ds_all_full ds1];
+                    end
+
+                    clear feats;
+
+                    ids_all_file(jj) = struct ('ids_all', ids_all); 
+                    ds_all_file(jj) = struct ('ds_all_full', ds_all_full); 
+                    
+                    
             end
             
-            if vt_type == 2
-                  save(q_dbfeat,'feats_file');
-
-            end
-            
+              % save the files
             if vt_type == 3
-                check_folder = fileparts(q_dbfeat);
-                if ~exist(check_folder, 'dir')
-                   mkdir(check_folder)
-                end
-                save(q_dbfeat,'feats_file','bbox_file', 'Edge_images');
-                q_dbfeat_all = load(q_dbfeat);
-
+            check_folder = fileparts(q_feat);
+            if ~exist(check_folder, 'dir')
+                mkdir(check_folder)
             end
+             save(q_feat,'ds_all_file', 'ids_all_file', 'q_bbox', 'db_bbox_file');
+             clear ids_all_file; clear ds_all_file;
+             x_q_feat = load(q_feat);
+
+                
         end
+          
+        end
+        
+        
         SLEN_top = zeros(total_top,2); 
-        k = Top_boxes;
-        ds_all = [];
+       
        % figure;
 
         for i=startfrom:total_top 
-            if vt_type == 2
-             feats2 = feats_file(i).featsdb;
-
-            end
+%             feats2 = feats_file(i).featsdb;
+%             for j = 1:Top_boxes
+%                 q1 = single(feats2(:,j));  %take column of each box
+%                 [ids1, ds1, top1]= leo_yael_nn(query_full_feat, q1, k);
+%                 
+%                 ids1 = [1 ; ids1];          %Take to element
+%                 ds1 = [top1 ; ds1];         % top element feature
+%                 
+%                 ids_all = [ids_all ids1];
+%                 ds_all_full = [ds_all_full ds1];
+%             end
+%             
+%           
+%             
+%             ids_all_file(i) = struct ('ids_all', ids_all); 
+%             ds_all_file(i) = struct ('ds_all_full', ds_all_full); 
+%             
+                   
             
-            if vt_type == 3
-            feats2 = q_dbfeat_all.feats_file(i).featsdb;
-            imgg_mat_box_db = q_dbfeat_all.bbox_file(i).bboxdb;
-            end
-            for j = 1:Top_boxes
-                q1 = single(feats2(:,j));  %take column of each box
-                [ids1, ds1]= yael_nn(query_full_feat, q1, k);
-                ds_all = [ds_all ds1];
-            end
+            
+            ds_all = x_q_feat.ds_all_file(i).ds_all_full(1:Top_boxes,:);
+           % x_q_feat = load(q_feat);
+            
+         
             % original dis: 1.25 ds_pre
             db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(i,1),1});  
             
@@ -570,7 +584,12 @@
         iTestSample
         %% LEO END
             
-            
+        
+       
+        
+        
+        
+        
         numReturned= length(ids);
         assert(numReturned<=nTop); % if your searcher returns fewer, it's your fault
         
