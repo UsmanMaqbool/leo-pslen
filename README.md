@@ -7,10 +7,11 @@ Master: has the previous method to save the feat file. Can take huge space (100M
 ```
 git clone https://github.com/UsmanMaqbool/Maqbool.git
 
-cd 3rd-party-support
+cd Maqbool/ && mkdir 3rd-party-support
 git clone https://github.com/vlfeat/matconvnet.git # follow full compilation tutorial below
 
 git clone https://github.com/Relja/netvlad.git
+Download the databases file (tokyo247.mat) and set the correct dsetSpecDir in localPaths.m and also add paths.libReljaMatlab 
 
 git clone https://github.com/zchrissirhcz/edges # Not official edges, but fixed error for matlab > 2017
 in matlab 'cd edges' and 'run linux_startup.m' and replace the 'edgeBoxes.m' with our edges boxes (to get the edges images as well')
