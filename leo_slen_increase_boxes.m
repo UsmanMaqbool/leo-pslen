@@ -1,4 +1,4 @@
-function mat_boxes = leo_slen_increase_boxes(bbx,wd,hh)
+function mat_boxes = leo_slen_increase_boxes(bbx,hyt,wyd)
     bboxes=[];
     gt=[111	98	25	101];
 
@@ -14,7 +14,7 @@ function mat_boxes = leo_slen_increase_boxes(bbx,wd,hh)
         fprintf( '=> %i', length(mat_boxes));
         %size(mat_boxes) (if boxes are less then 50 -> create empty boxes
         while (size(mat_boxes) < 50)
-            mat_boxes_add = [0 0 wd/16-1 hh/16-1 0]; 
+            mat_boxes_add = [0 0 hyt/16-1 wyd/16-1 0]; 
             mat_boxes( end+1, : ) = mat_boxes_add; 
             %size(mat_boxes);
         end

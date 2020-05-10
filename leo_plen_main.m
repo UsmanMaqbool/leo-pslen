@@ -12,7 +12,7 @@ netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white'; % netID= 'caffe_tokyoTM_co
 
 dbTest= dbTokyo247();
 datasets_path = 'datasets/Test_247_Tokyo_GSV';
-save_path = '/home/leo/mega/vt-5';
+save_path = '/home/leo/mega/vt-6';
 
 %% PITTSBURGH DATASET
 %netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';

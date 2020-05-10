@@ -111,16 +111,17 @@
             I = uint8(im{1,1});
             [bbox, ~] =edgeBoxes(I,model);
             
-           % [bbox,im, E, wd, hh] = img_Bbox(qimg_path,model);
+           % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
             
-            [wd, hh] = size(im{1,1});
+            [hyt, wyd] = size(im{1,1});
             
-            mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
+            mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
             query_full_feat= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
             
-            q_bbox = [1 1 hh wd 1 ; bbox];
+            db_bbox_top = [1 1 hyt wyd 1];
+            q_bbox = [db_bbox_top ; double(mat_boxes)*16];
             q_bbox = q_bbox (1:num_box+1,:);
             
 
@@ -138,14 +139,15 @@
                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
                     I = uint8(im{1,1});
                     [bbox, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
-                    [wd, hh] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
-                  %  [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
+                    [hyt, wyd] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
+                  %  [bbox,im, E, hyt, wyd] = img_Bbox(db_img,model);
                    
-                    mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
+                    mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
                     
                     im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
                     feats= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
-                    db_bbox = [1 1 hh wd 1 ; bbox];
+                    db_bbox_top = [1 1 hyt wyd 1];
+                    db_bbox = [db_bbox_top ; double(mat_boxes)*16];
                     db_bbox = db_bbox (1:num_box+1,:);
 
                     db_bbox_file(jj) = struct ('bboxdb', db_bbox); 
@@ -213,7 +215,7 @@
                    
             
             
-            ds_all = x_q_feat.ds_all_file(i).ds_all_full(1:Top_boxes,:);
+            ds_all = x_q_feat.ds_all_file(i).ds_all_full(2:Top_boxes+1,:);
            % x_q_feat = load(q_feat);
             
          
@@ -694,11 +696,11 @@ caxis([-0.2 0.2]);
 colorbar
 end
 
-function [mat_boxes,im, edge_image, wd, hh] = img_Bbox(db_img,model)
+function [mat_boxes,im, edge_image, hyt, wyd] = img_Bbox(db_img,model)
 im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
 I = uint8(im{1,1});
 [bbox, E] =edgeBoxes(I,model);
-[wd, hh] = size(im{1,1});
+[hyt, wyd] = size(im{1,1});
 edge_image = uint8(E * 255);
 bboxes=[];
 gt=[111	98	25	101];
