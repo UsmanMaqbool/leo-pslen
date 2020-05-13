@@ -10,7 +10,7 @@ setup;
 
 %==>> 3.000000 75.000000 8.000000 82.000000 4.000000 
 %24
-iTestSample_Start= 1; startfrom = 1;  show_output = 3;
+iTestSample_Start= 1; startfrom = 1;  show_output = 0;
 
 
 
@@ -22,8 +22,8 @@ dbTest= dbTokyo247();
 %save_path = '/home/leo/mega/vt-6';
 
 datasets_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV'; %% LAPTOP
-save_path = '/home/leo/MEGA/vt-6';
-
+save_path = '/home/leo/MEGA/Tokyo24-boxed-vt-6';
+save_path_all = 'pslen-results/pslen-tokyo2tokto-vt-6.mat';
 
 %% PITTSBURGH DATASET
 %netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
@@ -36,6 +36,7 @@ plen_opts= struct(...
             'netID',                netID, ...
             'dataset_path',         datasets_path, ...
             'save_path',            save_path, ...
+            'save_path_all',        save_path_all, ...
             'vt_type',              3, ...
             'iTestSample_Start',    iTestSample_Start, ...
             'startfrom',            startfrom, ...
@@ -63,15 +64,21 @@ qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % ju
 
 %Test the features by loading the bin files
 [recall, ~, ~, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn, plen_opts);
-save_results = strcat(paths.outPrefix,'plots/vd16_tokyoTM_conv5_3_vlad_preL2_intra_white_','t10.mat');
+save_results = strcat('pslen-results/pslen_tokyo2tokyo_','vt_6_2_plot.mat');
 recallNs = opts.recallNs;
 save(char(save_results), 'recall','recallNs');
 
-x = load(char('/home/leo/docker_ws/datasets/netvlad-original-output/plots/vd16_tokyoTM_conv5_3_vlad_preL2_intra_white_t2.mat'));
+x = load(char('pslen-results/pslen_tokyo2tokyo_vt_6_plot.mat'));
+x1 = load(char('pslen-results/pslen_tokyo2tokyo_vt_6_1_plot.mat'));
+x2 = load(char('pslen-results/pslen_tokyo2tokyo_vt_6_2_plot.mat')); % nearly equal to netvlad
 
 ori = load(char('/home/leo/docker_ws/datasets/netvlad-original-output/plots/vd16_tokyoTM_conv5_3_vlad_preL2_intra_white_real.mat'));
 
 
 
-plot(opts.recallNs, recall, 'ro-',x.recallNs, x.recall, 'go-',ori.recallNs, ori.recall, 'bo-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
+plot(opts.recallNs, recall, 'ro-', ...
+     x1.recallNs, x1.recall, 'go-', ...
+     x.recallNs, x.recall, 'go-', ...
+     ori.recallNs, ori.recall, 'bo-'...
+     ); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
 

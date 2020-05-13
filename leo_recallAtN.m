@@ -43,7 +43,7 @@
     %%
     net= relja_simplenn_tidy(net); % potentially upgrate the network to the latest version of NetVLAD / MatConvNet
 
-    
+    load (plen_opts.save_path_all);
     
     
     
@@ -106,130 +106,136 @@
         hold;
         end
         
-        if exist(q_feat, 'file')
-             x_q_feat = load(q_feat);
-             
-        else
-            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
-
-            I = uint8(im{1,1});
-            [bbox, ~] =edgeBoxes(I,model);
-            
-           % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
-            
-            [hyt, wyd] = size(im{1,1});
-            
-            mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
-
-            im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-            query_full_feat= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
-            
-            db_bbox_top = [1 1 hyt wyd 1];
-            q_bbox = [db_bbox_top ; double(mat_boxes)*16];
-            q_bbox = q_bbox (1:num_box+1,:);
-            
-
-            k = Top_boxes;
-            
-            
-            % Top 100 sample
-            
-            for jj = 1:total_top
-                
-                    ds_all_full = [];
-                    ids_all = [];
-
-                    db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-                    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-                    I = uint8(im{1,1});
-                    [bbox, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
-                    [hyt, wyd] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
-                  %  [bbox,im, E, hyt, wyd] = img_Bbox(db_img,model);
-                   
-                    mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
-                    
-                    im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-                    feats= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
-                    db_bbox_top = [1 1 hyt wyd 1];
-                    db_bbox = [db_bbox_top ; double(mat_boxes)*16];
-                    db_bbox = db_bbox (1:num_box+1,:);
-
-                    db_bbox_file(jj) = struct ('bboxdb', db_bbox); 
-                   
-                    fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
-                    
-                   
-                    for j = 1:Top_boxes
-                        q1 = single(feats(:,j));  %take column of each box
-                        [ids1, ds1, top1]= leo_yael_nn(query_full_feat, q1, k);
-
-                        ids1 = [1 ; ids1];          %Take to element
-                        ds1 = [top1 ; ds1];         % top element feature
-
-                        ids_all = [ids_all ids1];
-                        ds_all_full = [ds_all_full ds1];
-                    end
-
-                    clear feats;
-
-                    ids_all_file(jj) = struct ('ids_all', ids_all); 
-                    ds_all_file(jj) = struct ('ds_all_full', ds_all_full); 
-                    
-                    
-            end
-            
-              % save the files
-            if vt_type == 3
-            check_folder = fileparts(q_feat);
-            if ~exist(check_folder, 'dir')
-                mkdir(check_folder)
-            end
-             save(q_feat,'ds_all_file', 'ids_all_file', 'q_bbox', 'db_bbox_file');
-             clear ids_all_file; clear ds_all_file;
-             x_q_feat = load(q_feat);
-
-                
-        end
-          
-        end
         
+        
+        if isempty(plen_opts.save_path_all)
+            
+            if exist(q_feat, 'file')
+                 x_q_feat = load(q_feat);
+                 x_q_feat_all(iTestSample) = struct ('x_q_feat', x_q_feat); 
+            else
+                im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
+
+                I = uint8(im{1,1});
+                [bbox, ~] =edgeBoxes(I,model);
+
+               % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
+
+                [hyt, wyd] = size(im{1,1});
+
+                mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
+
+                im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
+                query_full_feat= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
+
+                db_bbox_top = [1 1 hyt wyd 1];
+                q_bbox = [db_bbox_top ; double(mat_boxes)*16];
+                q_bbox = q_bbox (1:num_box+1,:);
+
+
+                k = Top_boxes;
+
+
+                % Top 100 sample
+
+                for jj = 1:total_top
+
+                        ds_all_full = [];
+                        ids_all = [];
+
+                        db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
+                        im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
+                        I = uint8(im{1,1});
+                        [bbox, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
+                        [hyt, wyd] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
+                      %  [bbox,im, E, hyt, wyd] = img_Bbox(db_img,model);
+
+                        mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
+
+                        im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
+                        feats= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
+                        db_bbox_top = [1 1 hyt wyd 1];
+                        db_bbox = [db_bbox_top ; double(mat_boxes)*16];
+                        db_bbox = db_bbox (1:num_box+1,:);
+
+                        db_bbox_file(jj) = struct ('bboxdb', db_bbox); 
+
+                        fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
+
+
+                        for j = 1:Top_boxes
+                            q1 = single(feats(:,j));  %take column of each box
+                            [ids1, ds1, top1]= leo_yael_nn(query_full_feat, q1, k);
+
+                            ids1 = [1 ; ids1];          %Take to element
+                            ds1 = [top1 ; ds1];         % top element feature
+
+                            ids_all = [ids_all ids1];
+                            ds_all_full = [ds_all_full ds1];
+                        end
+
+                        clear feats;
+
+                        ids_all_file(jj) = struct ('ids_all', ids_all); 
+                        ds_all_file(jj) = struct ('ds_all_full', ds_all_full); 
+
+
+                end
+
+                  % save the files
+                if vt_type == 3
+                check_folder = fileparts(q_feat);
+                if ~exist(check_folder, 'dir')
+                    mkdir(check_folder)
+                end
+                 save(q_feat,'ds_all_file', 'ids_all_file', 'q_bbox', 'db_bbox_file');
+                 clear ids_all_file; clear ds_all_file;
+                 x_q_feat = load(q_feat);
+
+
+            end
+
+            end
+        else
+            x_q_feat = x_q_feat_all(iTestSample).x_q_feat;
+        end
         
         SLEN_top = zeros(total_top,2); 
        
-       % figure;
+       
+        ds_pre_1 = exp(-1.*ds_pre);
+        
+        ds_pre_sum = sum(ds_pre_1);
+        
+        
+        
+        
+        % figure;
 
         for i=startfrom:total_top 
-%             feats2 = feats_file(i).featsdb;
-%             for j = 1:Top_boxes
-%                 q1 = single(feats2(:,j));  %take column of each box
-%                 [ids1, ds1, top1]= leo_yael_nn(query_full_feat, q1, k);
-%                 
-%                 ids1 = [1 ; ids1];          %Take to element
-%                 ds1 = [top1 ; ds1];         % top element feature
-%                 
-%                 ids_all = [ids_all ids1];
-%                 ds_all_full = [ds_all_full ds1];
-%             end
-%             
-%           
-%             
-%             ids_all_file(i) = struct ('ids_all', ids_all); 
-%             ds_all_file(i) = struct ('ds_all_full', ds_all_full); 
-%             
-                   
+ 
             
-            
+           %Single File Load
            x_q_feat_ds_all = x_q_feat.ds_all_file(i).ds_all_full;
-           % x_q_feat = load(q_feat);
            x_q_feat_box_q =  x_q_feat.q_bbox;
            x_q_feat_box_db = x_q_feat.db_bbox_file(i).bboxdb;
+           
+           % Full File Load
+           
+           x_q_feat.ds_all_file(1).ds_all_full  ;
+           
+           x_q_feat_ds_all_2 = exp(-1.*x_q_feat_ds_all);
+           
+           
+           
            
            ds_all = x_q_feat_ds_all(2:Top_boxes+1,:);
            imgg_mat_box_q =  x_q_feat_box_q(2:Top_boxes+1,:);
            imgg_mat_box_db = x_q_feat_box_db(2:Top_boxes+1,:);
             
            
-           
+           x_q_feat_ds_all_1 = x_q_feat_ds_all(:,1);
+           x_q_feat_ds_all_1 = x_q_feat_ds_all_1-x_q_feat_ds_all_1(1,1);
             % original dis: 1.25 ds_pre
             db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(i,1),1});  
             
@@ -301,7 +307,7 @@
            
            
             s_delta_all = 0;
-    
+        
             
             s_delta_mat = 0;
             s_dis = 0;
@@ -539,19 +545,31 @@
                 
                  [roww,coll,values] = find(box_width_height<test_black);
                  check_less_Values = nnz(values);
-            end
+           end
             
-            if test_black < 100  && nnz(values) > 6
+           prob_ds_All = D_diff/ds_pre_sum;
+            
+            if test_black < 100 % && (nnz(values) > 6 || min_check > 0.4)
                 D_diff = 2*D_diff+abs(sum(S3(:)));
             end
-               
-            if num_var_s5 < 3 && num_var_s5 > 1 % && nnz(values) > 6 %  && nnz(values) > 6
-                D_diff = D_diff-mum_var_s5;
+            
+            % Work till 24
+            %if num_var_s5 < 3 && num_var_s5 > 1 % && nnz(values) > 6 %  && nnz(values) > 6
+            
+            if num_var_s5 < 3 && num_var_s5 > 1 %&& min_check > 0.4 %% x2
+    
+            %    D_diff = D_diff-(mum_var_s5*prob_ds_All);
+                D_diff = D_diff-(mum_var_s5*prob_ds_All);
             
             end
-              
-            if inegatif == 100  && num_var_s5 < 5  && min_check > 0.4 %&& nnz(values) > 6 %
-              D_diff = norm(D_diff-sum(S8(:))); 
+            
+            % work till 24
+             if inegatif == 100  && num_var_s5 < 5   %&& nnz(values) > 6 %  %% vt_6_1_plot
+            % if inegatif == 100  && num_var_s5 < 5 %% vt_6_plot.mat
+
+            %D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); 
+
+            D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); 
             end
             
             
@@ -709,7 +727,7 @@
     
     res= mean(printRecalls);
     relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
-    
+    save('pslen-tokyo2tokto-vt-6.mat','x_q_feat_all');
     relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');
     
     rng(rngState);

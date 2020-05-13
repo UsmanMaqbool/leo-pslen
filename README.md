@@ -26,7 +26,16 @@ in matlab 'cd toolbox' and 'run linux_startup.m'
 git clone https://github.com/vlfeat/matconvnet.git
 [Instuctions to install matconvnet](https://www.vlfeat.org/matconvnet/install/)
 
+## MATCOVNET
+In centos please use previous version
+'wget https://github.com/vlfeat/matconvnet/archive/v1.0-beta18.zip' and 
 
+```matlab
+addpath matlab 
+%and 
+vl_compilenn('enableGpu', true)
+```
+Also you need to disable the C++11 flag in .matlab/R2017a/mex_C++_glnxa64.xml to C++0x
 
 Run Matlab
 
