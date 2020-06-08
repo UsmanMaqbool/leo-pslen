@@ -1,4 +1,4 @@
-function [recalls, allRecalls]= leo_testCore(db, qFeat, dbFeat, plen_opts,varargin)
+function [recalls, allRecalls, allRecalls_ori]= leo_testCore(db, qFeat, dbFeat, plen_opts,varargin)
     opts= struct(...
         'nTestSample', inf, ...
         'recallNs', [1:5, 10:5:100], ...
@@ -12,9 +12,12 @@ function [recalls, allRecalls]= leo_testCore(db, qFeat, dbFeat, plen_opts,vararg
     else
         searcherRAW= searcherRAW_;
     end
-    [res, recalls]= leo_recallAtN( searcherRAW, db.numQueries,  @(iQuery, iDb) db.isPosQ(iQuery, iDb), opts.recallNs, opts.printN, opts.nTestSample,db,plen_opts);
+    [res, recalls, recalls_ori]= leo_recallAtN( searcherRAW, db.numQueries,  @(iQuery, iDb) db.isPosQ(iQuery, iDb), opts.recallNs, opts.printN, opts.nTestSample,db,plen_opts);
     
     allRecalls= recalls;
-    recalls= mean( allRecalls, 1 )';
+    allRecalls= mean( allRecalls, 1 )';
+    
+    allRecalls_ori= recalls_ori;
+    allRecalls_ori= mean( allRecalls_ori, 1 )';
     
 end

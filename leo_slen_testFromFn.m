@@ -1,4 +1,4 @@
-function [recall, rankloss, allRecalls, opts]= leo_slen_testFromFn(db, dbFeatFn, qFeatFn, plen_opts, opts, varargin)
+function [recall, rankloss, allRecalls, allRecalls_ori, opts]= leo_slen_testFromFn(db, dbFeatFn, qFeatFn, plen_opts, opts, varargin)
     
     if nargin<5 || isempty(opts)
         % a bit hacky but fine..
@@ -35,5 +35,5 @@ function [recall, rankloss, allRecalls, opts]= leo_slen_testFromFn(db, dbFeatFn,
     else
         rankloss= [];
     end
-    [recall, allRecalls]= leo_testCore(db, qFeat, dbFeat,plen_opts, 'nTestSample', opts.nTestSample, 'recallNs', opts.recallNs);
+    [recall, allRecalls, allRecalls_ori]= leo_testCore(db, qFeat, dbFeat,plen_opts, 'nTestSample', opts.nTestSample, 'recallNs', opts.recallNs);
 end

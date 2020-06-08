@@ -1,4 +1,4 @@
- function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,plen_opts)
+ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,plen_opts)
     if nargin<6, nSample= inf; end
     
     rngState= rng;
@@ -43,9 +43,14 @@
     %%
     net= relja_simplenn_tidy(net); % potentially upgrate the network to the latest version of NetVLAD / MatConvNet
 
-%    load (plen_opts.save_path_all);
-    
-    
+    if isfile(plen_opts.save_path_all)
+     
+        load(plen_opts.save_path_all);
+    else
+        fprintf('pslen-all single file not exits, system will process single images and make pslen-all in the end \n');
+
+        
+    end
     
     %addpath(genpath('/mnt/02/docker_ws/docker_ws/netvlad/slen-0.2-box'));
     
@@ -107,19 +112,20 @@
         end
         
         
-        
-        if exist(q_feat, 'file')
-             x_q_feat = load(q_feat);
-             
-        else
-            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
-
-            I = uint8(im{1,1});
-            [bbox, ~] =edgeBoxes(I,model);
-            
-           % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
-            
-            [hyt, wyd] = size(im{1,1});
+        if ~exist(plen_opts.save_path_all, 'file')
+                            %         
+                            %         if exist(q_feat, 'file')
+                            %              x_q_feat = load(q_feat);
+                            %              
+                            %         else
+                            %             im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
+                            % 
+                            %             I = uint8(im{1,1});
+                            %             [bbox, ~] =edgeBoxes(I,model);
+                            %             
+                            %            % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
+                            %             
+                            %             [hyt, wyd] = size(im{1,1});
             
             if exist(q_feat, 'file')
                  x_q_feat = load(q_feat);
@@ -208,6 +214,9 @@
 
             end
         else
+            %     load(plen_opts.save_path_all); above loading in
+            %     mentioned
+
             x_q_feat = x_q_feat_all(iTestSample).x_q_feat;
         end
         
