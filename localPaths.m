@@ -16,7 +16,7 @@ function paths= localPaths()
     
     % --- dataset specifications
     
-    paths.dsetSpecDir= 'netvlad/datasets-specs';
+    paths.dsetSpecDir= 'datasets/datasets-specs';
     
     % --- dataset locations
     paths.dsetRootPitts= '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/'; % should contain images/ and queries/
@@ -34,7 +34,7 @@ function paths= localPaths()
     % models used in our paper, download them from our research page
     % paths.ourCNNs= '~/Data/models/';
    % paths.ourCNNs= '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/models_v103_pre-trained/';
-    paths.ourCNNs= '/home/leo/docker_ws/netvlad/models_v103_pre-trained/';
+   paths.ourCNNs= 'datasets/models_v103_pre-trained/';
     
     % --- pretrained networks
     % off-the-shelf networks trained on other tasks, available from the MatConvNet
@@ -51,6 +51,6 @@ function paths= localPaths()
     %% HK PC
     %% paths.outPrefix= '/mnt/0287D1936157598A/docker_ws/datasets/netvlad-original-output/';
     %% LAPTOP
-    paths.outPrefix= '/home/leo/docker_ws/datasets/netvlad-original-output/';
+    paths.outPrefix= 'datasets/netvlad-original-output/';
 
 end
