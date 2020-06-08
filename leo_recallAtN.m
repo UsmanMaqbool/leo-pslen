@@ -43,7 +43,7 @@
     %%
     net= relja_simplenn_tidy(net); % potentially upgrate the network to the latest version of NetVLAD / MatConvNet
 
-    load (plen_opts.save_path_all);
+%    load (plen_opts.save_path_all);
     
     
     
@@ -219,6 +219,8 @@
            x_q_feat_ds_all = x_q_feat.ds_all_file(i).ds_all_full;
            x_q_feat_box_q =  x_q_feat.q_bbox;
            x_q_feat_box_db = x_q_feat.db_bbox_file(i).bboxdb;
+           x_q_feat_ids_all = x_q_feat.ids_all_file(i).ids_all ; 
+           
            
            % Full File Load
            
@@ -230,8 +232,8 @@
            
            
            ds_all = x_q_feat_ds_all(2:Top_boxes+1,:);
-           imgg_mat_box_q =  x_q_feat_box_q(2:Top_boxes+1,:);
-           imgg_mat_box_db = x_q_feat_box_db(2:Top_boxes+1,:);
+           imgg_mat_box_q =  x_q_feat_box_q(2:num_box+1,:);
+           imgg_mat_box_db = x_q_feat_box_db(2:num_box+1,:);
             
            
            x_q_feat_ds_all_1 = x_q_feat_ds_all(:,1);
@@ -466,6 +468,7 @@
                 box_var_q = [];
                 AAsum =[];
                 norms= [];
+                Pslen_table = [];
                     if show_output == 43
                         min_check
                         min_check_diff
@@ -481,23 +484,36 @@
                     %  subplot(2,3,2);clf
                     for jjj=1:length(row) %Top_boxes
 
+                        %Query -> Row and DB -> DB1 DB2 DB3 DB4 DB5 DB6 DB7
+                        %DB8
+                        %
+                        
+                        
+                        
+                        related_Box_dis_top = x_q_feat_ds_all(1,col(jjj));
+                        related_Box_dis = x_q_feat_ds_all(row(jjj)+1,col(jjj));   
+                        
+                        related_Box_q = x_q_feat_ids_all(row(jjj)+1,col(jjj));
+                        related_Box_db = col(jjj);
+                        
+                        bb_db = imgg_mat_box_db(related_Box_db,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai                      
+                        box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2] ;
+                        box_var_db = [box_var_db ; box_var_db_i];
+                                   
+                        % ye query k sath hona chahihye
+                        if  size(imgg_mat_box_q,1) < related_Box_q
+                           bb_q = imgg_mat_box_q(1,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai
 
-                        bb_q = imgg_mat_box_q(col(jjj),1:4);
-                       %  jjj
-                       % i
+                        else
+                          bb_q = imgg_mat_box_q(related_Box_q,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai
+
+                        end
                         box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
                         box_var_q = [box_var_q ; box_var_q_i];
-                        size(imgg_mat_box_db,2);
-                        % row(jjj);
-                        if  size(imgg_mat_box_db,1) < row(jjj)
-                            bb_db = imgg_mat_box_db(1,1:4);
-                        else
-                            bb_db = imgg_mat_box_db(row(jjj),1:4);
-                        end
-                        box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2];
-                        box_var_db = [box_var_db ; box_var_db_i ];
-
-
+                        
+                        
+                        Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)) related_Box_dis_top  exp(-1.*related_Box_dis_top)/ds_pre_sum related_Box_dis  exp(-1.*related_Box_dis)/ds_pre_sum single(bb_q(1,3)/bb_db(1,3)) single(bb_q(1,4)/bb_db(1,4))] ;
+                        Pslen_table = [Pslen_table ; Pslen_current]; 
 
                         A = [box_var_db_i ; box_var_q_i];
                         %  norms_sum = norms+cellfun(@norm,num2cell(A,1));
@@ -509,19 +525,19 @@
                         AA = abs(box_var_q_i - box_var_db_i);
                         AAsum = [AAsum ;AA];
                         if show_output == 43
-                            qq_img = draw_boxx(q_imgg,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
-                            dd_img = draw_boxx(db_imgg,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                            qq_img = draw_boxx(q_imgg,bb_q);%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                            dd_img = draw_boxx(db_imgg,bb_db);%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
 
-                            qqq_img = draw_boxx(qqq_img,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
-                            dbb_img = draw_boxx(dbb_img,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                            qqq_img = draw_boxx(qqq_img,bb_q);%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                            dbb_img = draw_boxx(dbb_img,bb_db);%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
 
 
-                            %  subplot(2,2,1); imshow(qq_img); %q_img
-                            %  subplot(2,2,2); imshow(dd_img); %
+                            subplot(2,3,1); imshow(qq_img); %q_img
+                            subplot(2,3,2); imshow(dd_img); %
 
-                            subplot(2,3,1); hold on; plot(box_var_q(jjj,:), 'ro-'); 
+                            subplot(2,3,3); hold on; plot(box_var_q(jjj,:), 'ro-'); 
 
-                            subplot(2,3,2); hold on; plot(box_var_db(jjj,:), 'ro-'); 
+                           
 
                             std_box_var_q = std(im2double(box_var_q_i),0,1);
                             % subplot(2,3,1); bar(std_box_var_q); %q_img
@@ -530,11 +546,11 @@
 
 
 
-                            subplot(2,3,3); bar(norms); %q_img
+                           % subplot(2,3,3); bar(norms); %q_img
                             subplot(2,3,4); imshow(qqq_img); %q_img
                             subplot(2,3,5); imshow(dbb_img); %
-                            subplot(2,3,6); bar(mean(AAsum,1)); %q_img
-
+                          %  subplot(2,3,6); bar(mean(AAsum,1)); %q_img
+                             subplot(2,3,6); hold on; plot(box_var_db(jjj,:), 'ro-'); 
                         end
 
                     end
@@ -546,8 +562,12 @@
                  [roww,coll,values] = find(box_width_height<test_black);
                  check_less_Values = nnz(values);
            end
-            
-           prob_ds_All = D_diff/ds_pre_sum;
+            width_prob = exp(-1.*mean(Pslen_table(:,11)));
+            height_prob = exp(-1.*mean(Pslen_table(:,12)));
+            Pslen_table_sum = width_prob*height_prob*sum(Pslen_table(:,10));
+%           prob_ds_All = D_diff/ds_pre_sum; old better working
+           prob_ds_All = (ds_pre_1(i,1)*2*Pslen_table_sum)%/(ds_pre_sum); % cross the main tokyo
+        %      prob_ds_All = ds_pre_1(i,1); % cross the main tokyo
             
             if test_black < 100 % && (nnz(values) > 6 || min_check > 0.4)
                 D_diff = 2*D_diff+abs(sum(S3(:)));
@@ -558,8 +578,8 @@
             
             if num_var_s5 < 3 && num_var_s5 > 1 %&& min_check > 0.4 %% x2
     
-            %    D_diff = D_diff-(mum_var_s5*prob_ds_All);
                 D_diff = D_diff-(mum_var_s5*prob_ds_All);
+               % D_diff = D_diff-(mum_var_s5);
             
             end
             
@@ -567,9 +587,9 @@
              if inegatif == 100  && num_var_s5 < 5   %&& nnz(values) > 6 %  %% vt_6_1_plot
             % if inegatif == 100  && num_var_s5 < 5 %% vt_6_plot.mat
 
-            %D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); 
+          %  D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); %pslen_tokyo2tokyo_vt_6_1_plot
 
-            D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); 
+            D_diff = D_diff-(sum(S8(:)*prob_ds_All));  %(no difference
             end
             
             
@@ -727,7 +747,7 @@
     
     res= mean(printRecalls);
     relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
-    save('pslen-tokyo2tokto-vt-6.mat','x_q_feat_all');
+    save('pslen-tokyo2tokto-vt-7.mat','x_q_feat_all');
     relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');
     
     rng(rngState);
