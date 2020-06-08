@@ -7,31 +7,36 @@ setup;
 %system('xinput set-prop 17 "Synaptics Two-Finger Scrolling" 1 0');
 %system('xinput set-prop 12 "Synaptics Two-Finger Scrolling" 1 0');
 
-
-%==>> 3.000000 75.000000 8.000000 82.000000 4.000000 
+  
+%   ==>> 3.000000 75.000000 8.000000 82.000000 4.000000 
 %24
 iTestSample_Start= 1; startfrom = 1;  show_output = 0;
 
 %3 -> 54.000000 72.000000 97.000000 78.000000 16.000000 
 
 
-
-%% TOKYO DATASET Original
+%% TOKYO DATASET
 %netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white'; % netID= 'caffe_tokyoTM_conv5_vlad_preL2_intra_white';
 
 %dbTest= dbTokyo247();
-            % datasets_path = 'datasets/Test_247_Tokyo_GSV'; %% PC
-            %save_path = '/home/leo/mega/vt-6';
+%datasets_path = 'datasets/Test_247_Tokyo_GSV'; %% PC
+
+%save_path = '/home/leo/mega/vt-6';
+%save_path = '/home/leo/mega/vt-7-pitts2tokyo';
+
+%datasets_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV'; %% LAPTOP
+%save_path = '/home/leo/MEGA/vt-6';
 
 %datasets_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV'; %% LAPTOP
 %save_path = '/home/leo/MEGA/Tokyo24-boxed-vt-6';
 %save_path_all = 'pslen-results/pslen-tokyo2tokto-vt-6.mat';
 
 %% PITTSBURGH DATASET
-%netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
-%dbTest= dbPitts('30k','test');
-%datasets_path = 'datasets/Test_Pitts30k';
-%save_path = 'datasets/Test_Pitts30k/vt-3';
+netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
+%1061 tk ho gia hai
+dbTest= dbPitts('30k','test');
+datasets_path = 'datasets/Test_Pitts30k';
+save_path = '/home/leo/mega/Pitts-ori-vt-6';
 
 %% Pitts 2 TOKYO DATASET
 netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
@@ -70,13 +75,16 @@ net= relja_simplenn_tidy(net); % potentially upgrate the network to the latest v
 dbFeatFn= sprintf('%s%s_%s_db.bin', paths.outPrefix, netID, dbTest.name);  % just to create the files in the out folder
 qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % just to create the files in the out folder
 
-%To create new output/*bin files on the datasets
-%serialAllFeats(net, dbTest.dbPath, dbTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
+% To create new output bin files on the datasets
 %serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
 
-%Test the features by loading the bin files
+%serialAllFeats(net, dbTest.dbPath, dbTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
+
+
 [recall, ~, ~, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn, plen_opts);
-save_results = strcat('pslen-results/pslen_tokyo2tokyo_','vt_6_6_plot.mat');
+%[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
+save_results = strcat(paths.outPrefix,'plots/pitts30k2tokyo30k','ori.mat');
+%save_results = strcat(paths.outPrefix,'plots/pitts30k2pitts30k','ori.mat');
 recallNs = opts.recallNs;
 save(char(save_results), 'recall','recallNs');
 

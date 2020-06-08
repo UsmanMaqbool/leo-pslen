@@ -108,7 +108,18 @@
         
         
         
-        if isempty(plen_opts.save_path_all)
+        if exist(q_feat, 'file')
+             x_q_feat = load(q_feat);
+             
+        else
+            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
+
+            I = uint8(im{1,1});
+            [bbox, ~] =edgeBoxes(I,model);
+            
+           % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
+            
+            [hyt, wyd] = size(im{1,1});
             
             if exist(q_feat, 'file')
                  x_q_feat = load(q_feat);
