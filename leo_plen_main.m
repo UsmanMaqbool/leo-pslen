@@ -13,8 +13,9 @@ setup;
 
 %%
 iTestSample_Start= 1; startfrom = 1;  show_output = 0;
-job_net = 'vd16_pitts30k'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
-job_datasets = 'pitts30k';  %'tokyo247'
+f_dimension = 512;
+job_net = 'vd16_tokyoTM'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
+job_datasets = 'tokyo247';  %'tokyo247' 'pitts30k'
 
 %%
 if strcmp(job_net,'vd16_pitts30k')
@@ -24,6 +25,7 @@ if strcmp(job_net,'vd16_pitts30k')
 elseif strcmp(job_net,'vd16_tokyoTM')
     % TOKYO DATASET
     netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
+    query_folder = 'query';
 end
 
 if strcmp(job_datasets,'pitts30k')
@@ -36,7 +38,7 @@ elseif strcmp(job_datasets,'tokyo247')
 end
 
 save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets);
-save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results.mat');
+save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results_512.mat');
 save_path_all = strcat('/home/leo/mega/pslen/all/',job_net,'_to_',job_datasets,'.mat');
 
 
@@ -77,7 +79,8 @@ plen_opts= struct(...
             'iTestSample_Start',    iTestSample_Start, ...
             'startfrom',            startfrom, ...
             'show_output',          show_output, ...
-            'cropToDim',            0 ...
+            'query_folder',         query_folder, ...
+            'cropToDim',            f_dimension ...
             );
 
 
@@ -97,10 +100,10 @@ qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % ju
 % To create new output bin files on the datasets
 %serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
 
-%serialAllFeats(net, dbTest.dbPath, dbTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
+%serialAllFeats(net, dbTest.dbPath, db1wTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
 
 
-[~, ~,recall,recall_ori, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn, plen_opts);
+[~, ~,recall,recall_ori, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn, plen_opts, [], 'cropToDim', f_dimension);
 
 recallNs = opts.recallNs;
 save(char(save_results), 'recall','recallNs', 'recall_ori');
@@ -109,9 +112,10 @@ ori = load(save_results);
 
 
 
-plot(opts.recallNs, recall, 'bo-', ...
-     opts.recallNs, recall_ori, 'go-' ...
-     ); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
+plot(opts.recallNs, ori.recall, 'bo-', ...
+     opts.recallNs, ori.recall_ori, 'ro-' ,...
+     opts.recallNs, recall, 'go-' ...
+     ); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none'); legend({'Previous Best','Original', 'New'});
 
 
 %save_results = strcat(paths.outPrefix,'plots/pitts30k2tokyo30k','ori.mat');

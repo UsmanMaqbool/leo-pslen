@@ -99,7 +99,7 @@
        
         %% Leo START
                 
-        qimg_path = strcat(dataset_path,'/queries/', db.qImageFns{iTestSample, 1});  
+        qimg_path = strcat(dataset_path,'/',plen_opts.query_folder, '/', db.qImageFns{iTestSample, 1});  
         q_img = strcat(save_path,'/', db.qImageFns{iTestSample, 1});  
         q_feat = strrep(q_img,'.jpg','.mat');
         
@@ -533,6 +533,36 @@
                         
                         
                         Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)) related_Box_dis_top  exp(-1.*related_Box_dis_top)/ds_pre_sum related_Box_dis  exp(-1.*related_Box_dis)/ds_pre_sum single(bb_q(1,3)/bb_db(1,3)) single(bb_q(1,4)/bb_db(1,4))] ;
+                        
+                        % Pslen_Current :  
+                        % 
+                        % [1-3] Querybox                    
+                        % Querybox# w h
+                        % [4-6] DB box
+                        % DBbox#    w h
+                        % [7]   related_Box_dis_top
+                        % box -> DB images
+                        % [8]   exp(-1.*related_Box_dis_top)/ds_pre_sum
+                        % first row has box of query to full DB images
+                        % ds_pre_sum is the sum of all db values       
+                        % ds_pre_1 = exp(-1.*ds_pre); (previous distances)
+                        % ds_pre_sum = sum(ds_pre_1);
+                        % [9]   related_Box_dis
+                        %       box to box matched distance
+                        % [10]  exp(-1.*related_Box_dis)/ds_pre_sum
+                        % box to box matched distance / the pre sum
+                        % [11]  single(bb_q(1,3)/bb_db(1,3)) 
+                        % width of query vs width of db
+                        % [12]  single(bb_q(1,4)/bb_db(1,4))]
+                        % height of query vs heigth of the db image
+                        
+                        
+                        
+                        
+                        
+                        
+        
+                        
                         Pslen_table = [Pslen_table ; Pslen_current]; 
 
                         A = [box_var_db_i ; box_var_q_i];
@@ -584,33 +614,74 @@
            end
             width_prob = exp(-1.*mean(Pslen_table(:,11)));
             height_prob = exp(-1.*mean(Pslen_table(:,12)));
+            % width x hieght x querybox-to-full images x querybox to db box
+
             Pslen_table_sum = width_prob*height_prob*sum(Pslen_table(:,10));
-%           prob_ds_All = D_diff/ds_pre_sum; old better working
-           prob_ds_All = (ds_pre_1(i,1)*2*Pslen_table_sum)%/(ds_pre_sum); % cross the main tokyo
-        %      prob_ds_All = ds_pre_1(i,1); % cross the main tokyo
             
-            if test_black < 100 % && (nnz(values) > 6 || min_check > 0.4)
+            
+            % Pslen_table_sum = width_prob*height_prob*sum(Pslen_table(:,10));
+                            %           prob_ds_All = D_diff/ds_pre_sum; old better working
+            prob_ds_All = (ds_pre_1(i,1)*Pslen_table_sum)/ds_pre_sum;    %   /(ds_pre_sum); % cross the main tokyo
+        
+           
+             if inegatif == 100  && num_var_s5 < 5   %&& nnz(values) > 6 %  %% vt_6_1_plot
+
+             D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); %pslen_tokyo2tokyo_vt_6_1_plot
+
+            end
+        
+            if test_black < 100 && (nnz(values) > 6 || min_check > 0.4)
                 D_diff = 2*D_diff+abs(sum(S3(:)));
             end
             
-            % Work till 24
-            %if num_var_s5 < 3 && num_var_s5 > 1 % && nnz(values) > 6 %  && nnz(values) > 6
             
             if num_var_s5 < 3 && num_var_s5 > 1 %&& min_check > 0.4 %% x2
     
                 D_diff = D_diff-(mum_var_s5*prob_ds_All);
-               % D_diff = D_diff-(mum_var_s5);
             
             end
+         
             
-            % work till 24
-             if inegatif == 100  && num_var_s5 < 5   %&& nnz(values) > 6 %  %% vt_6_1_plot
-            % if inegatif == 100  && num_var_s5 < 5 %% vt_6_plot.mat
+            
+            %==================================== previous 4096 best
+            %working
+            
+                % work till 24
+            %if inegatif == 100  && num_var_s5 < 5   %&& nnz(values) > 6 %  %% vt_6_1_plot
+                                % if inegatif == 100  && num_var_s5 < 5 %% vt_6_plot.mat
 
-          %  D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); %pslen_tokyo2tokyo_vt_6_1_plot
+                                %D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); %pslen_tokyo2tokyo_vt_6_1_plot
 
-            D_diff = D_diff-(sum(S8(:)*prob_ds_All));  %(no difference
-            end
+            %D_diff = D_diff-2*(sum(S8(:)*prob_ds_All));  %(no difference
+            
+           % end   
+        
+            %if test_black < 100 % && (nnz(values) > 6 || min_check > 0.4)
+             %   D_diff = 2*D_diff+abs(sum(S3(:)));
+            %end
+            
+                                % Work till 24
+                                %if num_var_s5 < 3 && num_var_s5 > 1 % && nnz(values) > 6 %  && nnz(values) > 6
+            
+            %if num_var_s5 < 3 && num_var_s5 > 1 %&& min_check > 0.4 %% x2
+    
+             %   D_diff = D_diff-(mum_var_s5*prob_ds_All);
+                                % D_diff = D_diff-(mum_var_s5);
+            
+            %end
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             
             
 
