@@ -633,7 +633,7 @@
             prob_ds_All = (ds_pre_1(i,1)*Pslen_table_sum)/ds_pre_sum;    %   /(ds_pre_sum); % cross the main tokyo
         
                 
-            D_diff = D_diff-prob_ds_All;
+            D_diff = D_diff-Pslen_table_sum;
             
             
              if inegatif == 100  && num_var_s5 < 5  && nnz(values) > 6 %  %% vt_6_1_plot
