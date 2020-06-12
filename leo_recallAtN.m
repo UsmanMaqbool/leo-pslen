@@ -531,8 +531,9 @@
                         box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
                         box_var_q = [box_var_q ; box_var_q_i];
                         
-                        
-                        Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)) related_Box_dis_top  exp(-1.*related_Box_dis_top)/ds_pre_sum related_Box_dis  exp(-1.*related_Box_dis)/ds_pre_sum single(bb_q(1,3)/bb_db(1,3)) single(bb_q(1,4)/bb_db(1,4))] ;
+                        P_width_height = exp(-1.*10000/single(bb_q(1,3)*bb_q(1,4)));
+                        P_related_Box_dis = exp(-1.*related_Box_dis);
+                        Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)) related_Box_dis_top  exp(-1.*related_Box_dis_top)/ds_pre_sum related_Box_dis  exp(-1.*related_Box_dis)/ds_pre_sum single(bb_q(1,3)/bb_db(1,3)) single(bb_q(1,4)/bb_db(1,4)) P_width_height*P_related_Box_dis ] ;
                         
                         % Pslen_Current :  
                         % 
@@ -555,7 +556,8 @@
                         % width of query vs width of db
                         % [12]  single(bb_q(1,4)/bb_db(1,4))]
                         % height of query vs heigth of the db image
-                        
+                        % [13]  single(bb_q(1,4)/bb_db(1,4))]
+                        % width_height P of each box
                         
                         
                         
@@ -584,7 +586,9 @@
 
                             subplot(2,3,1); imshow(qq_img); %q_img
                             subplot(2,3,2); imshow(dd_img); %
-
+                            ori_top_current = strcat(string(ds_pre(i,1)), '->', string(related_Box_dis_top),' ->', string(related_Box_dis));
+                            text(50,50,strcat(string(ds_pre(i,1)), '->', string(related_Box_dis_top),' ->', string(related_Box_dis)), 'Color', 'y');
+                            title(ori_top_current)
                             subplot(2,3,3); hold on; plot(box_var_q(jjj,:), 'ro-'); 
 
                            
@@ -599,6 +603,8 @@
                            % subplot(2,3,3); bar(norms); %q_img
                             subplot(2,3,4); imshow(qqq_img); %q_img
                             subplot(2,3,5); imshow(dbb_img); %
+                            title(Pslen_current(1,13))
+
                           %  subplot(2,3,6); bar(mean(AAsum,1)); %q_img
                              subplot(2,3,6); hold on; plot(box_var_db(jjj,:), 'ro-'); 
                         end
@@ -615,27 +621,33 @@
             width_prob = exp(-1.*mean(Pslen_table(:,11)));
             height_prob = exp(-1.*mean(Pslen_table(:,12)));
             % width x hieght x querybox-to-full images x querybox to db box
+            
+          
 
-            Pslen_table_sum = width_prob*height_prob*sum(Pslen_table(:,10));
+            
+            Pslen_table_sum = sum(Pslen_table(:,13));
             
             
             % Pslen_table_sum = width_prob*height_prob*sum(Pslen_table(:,10));
                             %           prob_ds_All = D_diff/ds_pre_sum; old better working
             prob_ds_All = (ds_pre_1(i,1)*Pslen_table_sum)/ds_pre_sum;    %   /(ds_pre_sum); % cross the main tokyo
         
-           
-             if inegatif == 100  && num_var_s5 < 5   %&& nnz(values) > 6 %  %% vt_6_1_plot
+                
+            D_diff = D_diff-prob_ds_All;
+            
+            
+             if inegatif == 100  && num_var_s5 < 5  && nnz(values) > 6 %  %% vt_6_1_plot
 
              D_diff = norm(D_diff-(sum(S8(:)*prob_ds_All))); %pslen_tokyo2tokyo_vt_6_1_plot
 
             end
         
             if test_black < 100 && (nnz(values) > 6 || min_check > 0.4)
-                D_diff = 2*D_diff+abs(sum(S3(:)));
+                D_diff = 2*D_diff+abs(sum(S8(:)));
             end
             
             
-            if num_var_s5 < 3 && num_var_s5 > 1 %&& min_check > 0.4 %% x2
+            if num_var_s5 < 3 && num_var_s5 > 1 && min_check > 0.4 %% x2
     
                 D_diff = D_diff-(mum_var_s5*prob_ds_All);
             
@@ -937,8 +949,11 @@ end
 
 function img = draw_boxx(I,bb)
 
-bb=[bb(1) bb(2) bb(3)+bb(1) bb(4)+bb(2)];
+%5bb=[bb(1) bb(2) bb(3)+bb(1) bb(4)+bb(2)];
 
-img = insertShape(I,'Rectangle',bb,'LineWidth',3);
+%img = insertShape(I,'Rectangle',bb,'LineWidth',3);
+
+%drawRectangle(image, Xmin, Ymin, width, height)
+img = drawRectangle(I, bb(2), bb(1), bb(4), bb(3));
 
 end
