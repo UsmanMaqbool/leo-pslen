@@ -7,9 +7,9 @@ setup;
 %system('xinput set-prop 17 "Synaptics Two-Finger Scrolling" 1 0');
 %system('xinput set-prop 12 "Synaptics Two-Finger Scrolling" 1 0');
 
-%3 -> 54.000000 72.000000 97.000000 78.000000 16.000000   
+% 3 -> 54.000000 72.000000 97.000000 78.000000 16.000000   
 %   ==>> 3.000000 75.000000 8.000000 82.000000 4.000000 
-%24
+% 24
 
 %%
 iTestSample_Start= 1; startfrom = 1;  show_output = 0;
@@ -34,12 +34,12 @@ if strcmp(job_datasets,'pitts30k')
     
 elseif strcmp(job_datasets,'tokyo247')
     dbTest= dbTokyo247();
-    datasets_path = 'datasets/Test_247_Tokyo_GSV'; %% PC
+    datasets_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV'; %% PC
 end
 
-save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets);
+save_path = strcat('/home/leo/MEGA/pslen/',job_net,'_to_',job_datasets);
 save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results_512.mat');
-save_path_all = strcat('/home/leo/mega/pslen/all/',job_net,'_to_',job_datasets,'.mat');
+save_path_all = strcat('/home/leo/MEGA/pslen/all/',job_net,'_to_',job_datasets,'.mat');
 
 
 %% TOKYO DATASET
@@ -98,9 +98,9 @@ dbFeatFn= sprintf('%s%s_%s_db.bin', paths.outPrefix, netID, dbTest.name);  % jus
 qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % just to create the files in the out folder
 
 % To create new output bin files on the datasets
-%serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
+% serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
 
-%serialAllFeats(net, dbTest.dbPath, db1wTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
+% serialAllFeats(net, dbTest.dbPath, db1wTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
 
 
 [~, ~,recall,recall_ori, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn, plen_opts, [], 'cropToDim', f_dimension);
@@ -113,8 +113,8 @@ ori = load(save_results);
 
 
 plot(opts.recallNs, ori.recall, 'bo-', ...
-     opts.recallNs, ori.recall_ori, 'ro-' ,...
-     opts.recallNs, recall, 'go-' ...
+     opts.recallNs, recall, 'go-', ...
+     opts.recallNs, recall_ori, 'ro-' ...
      ); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none'); legend({'Previous Best','Original', 'New'});
 
 

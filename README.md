@@ -4,6 +4,9 @@ Master: has the previous method to save the feat file. Can take huge space (100M
 
 
 
+[hyt, wyd,~] , so we need to divide the boxes by 3
+
+
 ```
 git clone https://github.com/UsmanMaqbool/Maqbool.git
 
