@@ -1,5 +1,5 @@
 
-function [ids, dis, top]= yael_nn(v, q, k, distype)
+function [ids, dis, top]= leo_yael_nn(v, q, k, distype)
     assert( nargin<4 || distype==2 );
     if nargin<3, k= 1; end
     assert(k<=size(v,2));

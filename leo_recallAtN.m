@@ -134,12 +134,18 @@
                 im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
                 I = uint8(im{1,1});
-                [bbox, ~] =edgeBoxes(I,model);
+                [bbox_all, ~] =edgeBoxes(I,model);
+               % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,modelchf to pkr
+               [hyt, wyd, ~] = size(im{1,1});
+                
+               
+                bbox = []; 
 
-               % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
-
-                [hyt, wyd] = size(im{1,1});
-
+                for k_index = 1:size(bbox_all,1)
+                    if (bbox_all(k_index,3)*bbox_all(k_index,4))/(hyt*wyd) > 0.45
+                    bbox = [bbox; bbox_all(k_index,:)];
+                    end
+                end
                 mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
 
                 im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
@@ -163,10 +169,18 @@
                         db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
                         im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
                         I = uint8(im{1,1});
-                        [bbox, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
-                        [hyt, wyd] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
-                      %  [bbox,im, E, hyt, wyd] = img_Bbox(db_img,model);
+                        [bbox_all, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
+                        [hyt, wyd, ~] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
+                        
+                        bbox = []; 
 
+                         for k_index = 1:size(bbox_all,1)
+                            if (bbox_all(k_index,3)*bbox_all(k_index,4))/(hyt*wyd) > 0.45
+                            bbox = [bbox; bbox_all(k_index,:)];
+                            end
+                        end
+
+                        
                         mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
 
                         im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
@@ -930,7 +944,7 @@ function [mat_boxes,im, edge_image, hyt, wyd] = img_Bbox(db_img,model)
 im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
 I = uint8(im{1,1});
 [bbox, E] =edgeBoxes(I,model);
-[hyt, wyd] = size(im{1,1});
+[hyt, wyd, ~] = size(im{1,1});
 edge_image = uint8(E * 255);
 bboxes=[];
 gt=[111	98	25	101];
