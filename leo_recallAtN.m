@@ -77,9 +77,8 @@
     Top_boxes = 10; % will be used.
 
     top_100 = [];
-    total_top = 100; %100;
+    total_top = 100; %100;0
     inegatif_i = [];
-
    
   
  
@@ -228,6 +227,7 @@
         exp_ds_pre_sum = sum(exp_ds_pre);
         prob_q_db = exp_ds_pre/exp_ds_pre_sum;
         x_q_feat_ids_all = [];
+        min_ds_pre_all = [];
 
         % figure;
             
@@ -440,8 +440,8 @@
                     related_Box_q = x_q_feat_ids_all(row(jjj)+1,col(jjj));
                     related_Box_db = col(jjj);
 
-                    q_size = x_q_feat_box_q(1,3)*(x_q_feat_box_q(1,4)/3);  % wrong size, 3 se multiply howa howa hai
-                    db_size = x_q_feat_box_db(1,3)*(x_q_feat_box_db(1,4)/3);
+                    q_size = x_q_feat_box_q(1,3)*(x_q_feat_box_q(1,4));  % wrong size, 3 se multiply howa howa hai
+                    db_size = x_q_feat_box_db(1,3)*(x_q_feat_box_db(1,4));
 
 
 
@@ -459,25 +459,34 @@
                     box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
                     box_var_q = [box_var_q ; box_var_q_i];
 
-                    q_width_height = (bb_q(1,3)*bb_q(1,4))/q_size;
-                    db_width_height = (bb_db(1,3)*bb_db(1,4))/db_size;
+                    q_width_height = (10*bb_q(1,3)*bb_q(1,4))/(q_size);
+                    db_width_height = (10*bb_db(1,3)*bb_db(1,4))/(db_size);
 
                     exp_related_Box_dis = exp(-1.*related_Box_dis);%/ds_box_all_sum;
 
-
+                
                     sum_distance = ds_pre(1,1)+related_Box_dis-min(ds_all(:));
                     exp_sum_distance = exp(-1.*sum_distance); %*exp_related_Box_dis;
+                    
+                    if i > 1
+                       relative_diff =  ds_pre(i,1) - ds_pre(i-1,1);
+                    else
+                       % exp_relative_diff = 1;
+                        relative_diff =  ds_pre(i+1,1) - ds_pre(i,1);
+                    end
+                    exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
 
-                    exp_q_width_height = exp(-1.*(1-q_width_height));
-                    exp_db_width_height = exp(-1.*(1-db_width_height));
+                    exp_q_width_height = exp(-1.*(q_width_height));
+                    exp_db_width_height = exp(-1.*(db_width_height));
 
 
 
                     Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)),...
-                        related_Box_dis_top  exp(-1.*related_Box_dis_top)/exp_ds_pre_sum related_Box_dis,...
+                        related_Box_dis_top exp(-1.*related_Box_dis_top)/exp_ds_pre_sum related_Box_dis,...
                         exp(-1.*related_Box_dis)/exp_ds_pre_sum single(bb_q(1,3)/bb_db(1,3)) single(bb_q(1,4)/bb_db(1,4)) ,...
                         exp_related_Box_dis exp_q_width_height exp_db_width_height, ...
-                        exp_sum_distance*exp_q_width_height*exp_db_width_height ] ;
+                        exp_sum_distance*exp_q_width_height*exp_db_width_height*exp_relative_diff,...
+                        q_width_height db_width_height ] ;
 
                     % Pslen_Current :  
                     % 
@@ -503,18 +512,18 @@
                     % [13]  single(bb_q(1,4)/bb_db(1,4))]
                     % width_height P of each box
 
-
-                    if q_width_height < 0.5 || db_width_height < 0.5
-
-                        Pslen_table_neg = [Pslen_table_neg ; Pslen_current];
-                        Pslen_table_43 = [Pslen_table_43;[0 Pslen_current(1,16)]];
-
-                    else
+% 
+%                     if q_width_height < 0.5 || db_width_height < 0.5
+% 
+%                         Pslen_table_neg = [Pslen_table_neg ; Pslen_current];
+%                         Pslen_table_43 = [Pslen_table_43;[0 Pslen_current(1,16)]];
+% 
+%                     else
 
                         Pslen_table = [Pslen_table ; Pslen_current]; 
                             Pslen_table_43 = [Pslen_table_43;[Pslen_current(1,16) 0]];
 
-                    end
+%                     end
 
                     A = [box_var_db_i ; box_var_q_i];
                     %  norms_sum = norms+cellfun(@norm,num2cell(A,1));
@@ -527,11 +536,6 @@
                     AAsum = [AAsum ;AA];
 
                     if show_output == 43
-
-
-                            
-
-
 
                             qq_img = draw_boxx(q_imgg,bb_q);%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
                             dd_img = draw_boxx(db_imgg,bb_db);%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
@@ -555,7 +559,6 @@
 
                             title({
                             ['dbbox wxh exp = ' num2str(exp_db_width_height) ]
-                            [ 'ds-pre(i,1) = ' num2str(ds_pre(i,1)) ]
                             [ 'QBox->DBBox Distance = ' num2str(related_Box_dis-ds_pre(i,1)) ]
                             [ 'QBox->DBBox Distance TOP = ' num2str(related_Box_dis_top-ds_pre(i,1)) ]
                             });
@@ -567,26 +570,29 @@
                            % subplot(2,3,3); bar(norms); %q_img
                             subplot(2,3,4); imshow(qqq_img); %q_img
                             if ~isempty(Pslen_table)
-                            title({
-                            [ 'Pslen-table ' num2str(min(Pslen_table(:,7))) ]
-                            [ 'original-Pslen-table ' num2str(ds_pre(i,1)-min(Pslen_table(:,7))) ]
-                            });
+                                title({
+                                [ 'min ds-pre ' num2str(min(ds_pre(:))) ]
+                                [ 'current ds-pre(i,1) = ' num2str(ds_pre(i,1)) ]
+                                [ 'min ds-all ' num2str(min(ds_all(:))) ]
+                                [ 'original-Pslen-table ' num2str(ds_pre(i,1)-min(Pslen_table(:,7))) ]
+                                });
                             end
                             subplot(2,3,5); imshow(dbb_img); %
                             if ~isempty(Pslen_table_neg)
-                            title({
-                            [ 'Pslen-table-neg ' num2str(min(Pslen_table_neg(:,7))) ]
-                            [ 'original-Pslen-table-neg ' num2str(ds_pre(i,1)-min(Pslen_table_neg(:,7))) ]
-                            });
+                                title({
+                                [ 'Pslen-table-neg ' num2str(min(Pslen_table_neg(:,7))) ]
+                                [ 'original-Pslen-table-neg ' num2str(ds_pre(i,1)-min(Pslen_table_neg(:,7))) ]
+                                });
                             end
                              subplot(2,3,6); hold on; plot(box_var_db(jjj,:), 'ro-'); 
-                      end
+                    end
 
 
 
                 end
               
            end
+           min_ds_pre_all = [min_ds_pre_all; ds_pre(1,1) ds_pre(i,1) min(ds_all(:)) mean(ds_all(:)) min(x_q_feat_ds_all(1,:)) mean(x_q_feat_ds_all(1,:)) ];
            % width_prob = exp(-1.*mean(Pslen_table(:,11)));
            % height_prob = exp(-1.*mean(Pslen_table(:,12)));
            % width x hieght x querybox-to-full images x querybox to db box
@@ -601,28 +607,23 @@
            exp_q_width_height_sum = sum(Pslen_table(:,14));
            exp_db_width_height_sum = sum(Pslen_table(:,15));
 
+           mean_min_top = mean(x_q_feat_ds_all(1,:))-min(x_q_feat_ds_all(1,:));
+          % exp_mean_min_top = exp(-1.*mean_min_top);
            prob_ds_All = prob_ds_pre_sum*sum(Pslen_table(:,16));
-           min_dis = exp(-3.*(min(Pslen_table(:,7))-ds_pre(1,1)));
-
-           prob_q_db(i,1) = min_dis*prob_ds_All;
+            
+           
                
            
            end
            
-           prob_ds_All_neg = 1;
-           if ~isempty(Pslen_table_neg)
-            
-            min_dis = exp(-1.*(min(Pslen_table_neg(:,7))-ds_pre(1,1)));
-            prob_ds_All_neg = (prob_ds_pre_sum*sum(Pslen_table_neg(:,16)));
-       
-           end
-           prob_ds_All = prob_ds_All_neg*prob_ds_All;
+         
            
-           D_diff = D_diff-prob_ds_All;
-            
-           if sum(Pslen_table_43(:,2)) == 0
-           %    D_diff = 2*D_diff;
-           end
+           D_diff = D_diff+prob_ds_All;
+         
+        
+           prob_q_db(i,1) = D_diff;
+
+         
          
             %==================================== previous 4096 best
             %working
@@ -686,30 +687,31 @@
         end
         
         %  SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
-        Slot_group = 5;
+        
+%         Slot_group = 5;
+%         idss = ids;
+% 
+%         for i=1:total_top/Slot_group
+%             slot_Start = i*Slot_group-Slot_group;
+%             slot_till = i*Slot_group;
+%             [C c_i] = sortrows(ds_new_top(1+slot_Start:slot_till,1));
+%             for j=1:Slot_group
+%                 idss(j+slot_Start,1) = ids(c_i(j,1)+slot_Start);
+%             end
+% 
+% 
+%         end
+
+        
+        
+        [C c_i] = sortrows(ds_new_top);
         idss = ids;
-
-        for i=1:total_top/Slot_group
-            slot_Start = i*Slot_group-Slot_group;
-            slot_till = i*Slot_group;
-            [C c_i] = sortrows(ds_new_top(1+slot_Start:slot_till,1));
-            for j=1:Slot_group
-                idss(j+slot_Start,1) = ids(c_i(j,1)+slot_Start);
-            end
-
+        inegatifss = inegatif_i;
+        for i=1:total_top
+            idss(i,1) = ids(c_i(i,1));
+            inegatifss(i,1) = inegatif_i(c_i(i,1));
 
         end
-
-        
-        
-       
-        %[C c_i] = sortrows(ds_new_top);
-      %  idss = ids;
-        %inegatifss = inegatif_i;
-       % for i=1:total_top
-       %     idss(i,1) = ids(c_i(i,1));
-       %     inegatifss(i,1) = inegatif_i(c_i(i,1));
-       % end
          if show_output == 3
 
                 subplot(2,6,1); imshow(imread(char(qimg_path))); %q_img
@@ -725,17 +727,33 @@
                 db_img5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(5,1),1});
                 
                 subplot(2,6,2); imshow(imread(char(db_imgo1))); %
+                aa = strcat(string(ds_pre(1,1)));title(aa)
+
                 subplot(2,6,3); imshow(imread(char(db_imgo2))); %
+                aa = strcat(string(ds_pre(2,1)));title(aa)
+
                 subplot(2,6,4); imshow(imread(char(db_imgo3))); %
+                aa = strcat(string(ds_pre(3,1)));title(aa)
+
                 subplot(2,6,5); imshow(imread(char(db_imgo4))); %
+                aa = strcat(string(ds_pre(4,1)));title(aa)
+
                 subplot(2,6,6); imshow(imread(char(db_imgo5))); %
+                aa = strcat(string(ds_pre(5,1)));title(aa)
+
                 
                 subplot(2,6,8); imshow(imread(char(db_img1))); %
+                aa = strcat(string(ds_new_top(1,1)), '->', string(prob_q_db(1,1)));title(aa)
                 subplot(2,6,9); imshow(imread(char(db_img2))); %
+                aa = strcat(string(ds_new_top(2,1)), '->', string(prob_q_db(1,1)));title(aa)
                 subplot(2,6,10); imshow(imread(char(db_img3))); %
+                aa = strcat(string(ds_new_top(3,1)), '->', string(prob_q_db(1,1)));title(aa)
                 subplot(2,6,11); imshow(imread(char(db_img4))); %
+                aa = strcat(string(ds_new_top(4,1)), '->', string(prob_q_db(1,1)));title(aa)
                 subplot(2,6,12); imshow(imread(char(db_img5))); %
-                fprintf( '==>> %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1));
+                aa = strcat(string(ds_new_top(5,1)), '->', string(prob_q_db(1,1)));title(aa)
+
+                %fprintf( '==>> %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1));
 
          end
          
@@ -773,7 +791,7 @@
                 aa = strcat(string(ds_new_top(9,1)), '->', string(prob_q_db(9,1)));title(aa)
                 subplot(2,6,12); imshow(imread(char(db_img5))); %
                 aa = strcat(string(ds_new_top(10,1)), '->', string(prob_q_db(10,1)));title(aa)
-                fprintf( '==>> %f %f %f %f %f %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1), c_i(6,1), c_i(7,1),c_i(8,1), c_i(9,1) ,c_i(10,1));
+%                fprintf( '==>> %f %f %f %f %f %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1), c_i(6,1), c_i(7,1),c_i(8,1), c_i(9,1) ,c_i(10,1));
 
          end
         

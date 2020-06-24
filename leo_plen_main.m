@@ -12,7 +12,7 @@ setup;
 % 24
 
 %%
-iTestSample_Start= 1; startfrom = 1;  show_output = 0;
+iTestSample_Start= 1; startfrom = 1;  show_output =0;
 f_dimension = 512;
 job_net = 'vd16_tokyoTM'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
 job_datasets = 'tokyo247';  %'tokyo247' 'pitts30k'
@@ -38,6 +38,8 @@ elseif strcmp(job_datasets,'tokyo247')
 end
 
 save_path = strcat('/home/leo/MEGA/pslen/',job_net,'_to_',job_datasets);
+%save_path = strcat('/home/leo/MEGA/pslen/',job_net,'_to_',job_datasets,'_box_50_plus');
+
 save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results_512.mat');
 save_path_all = strcat('/home/leo/MEGA/pslen/all/',job_net,'_to_',job_datasets,'.mat');
 
