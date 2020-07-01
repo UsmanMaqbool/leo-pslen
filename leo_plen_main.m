@@ -9,10 +9,10 @@ setup;
 
 % 3 -> 54.000000 72.000000 97.000000 78.000000 16.000000   
 %   ==>> 3.000000 75.000000 8.000000 82.000000 4.000000 
-% 24
+% 
 
 %%
-iTestSample_Start= 1; startfrom = 1;  show_output =0;
+iTestSample_Start= 1; startfrom = 1;  show_output = 3;
 f_dimension = 512;
 job_net = 'vd16_tokyoTM'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
 job_datasets = 'tokyo247';  %'tokyo247' 'pitts30k'
@@ -21,6 +21,8 @@ job_datasets = 'tokyo247';  %'tokyo247' 'pitts30k'
 if strcmp(job_net,'vd16_pitts30k')
     % PITTSBURGH DATASET
     netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
+    query_folder = 'queries';
+
 
 elseif strcmp(job_net,'vd16_tokyoTM')
     % TOKYO DATASET
@@ -38,7 +40,7 @@ elseif strcmp(job_datasets,'tokyo247')
 end
 
 save_path = strcat('/home/leo/MEGA/pslen/',job_net,'_to_',job_datasets);
-%save_path = strcat('/home/leo/MEGA/pslen/',job_net,'_to_',job_datasets,'_box_50_plus');
+%save_path = strcat('/home/leo/MEGA/pslen/',job_net,'_to_',job_datasets,'_box_51_plus');
 
 save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results_512.mat');
 save_path_all = strcat('/home/leo/MEGA/pslen/all/',job_net,'_to_',job_datasets,'.mat');
