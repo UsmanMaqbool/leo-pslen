@@ -179,18 +179,12 @@
 
                         for j = 1:Top_boxes
                             q1 = single(feats(:,j));  %take column of each box
-                            [ids1, ds1, top1]= leo_yael_nn(query_full_feat, q1, k);
+                            ds1= leo_yael_nn(query_full_feat, q1, k);
 
-                            ids1 = [1 ; ids1];          %Take to element
-                            ds1 = [top1 ; ds1];         % top element feature
-
-                            ids_all = [ids_all ids1];
                             ds_all_full = [ds_all_full ds1];
                         end
 
                         clear feats;
-
-                        ids_all_file(jj) = struct ('ids_all', ids_all); 
                         ds_all_file(jj) = struct ('ds_all_full', ds_all_full); 
 
 
@@ -202,8 +196,8 @@
                 if ~exist(check_folder, 'dir')
                     mkdir(check_folder)
                 end
-                 save(q_feat,'ds_all_file', 'ids_all_file', 'q_bbox', 'db_bbox_file');
-                 clear ids_all_file; clear ds_all_file;
+                 save(q_feat,'ds_all_file', 'q_bbox', 'db_bbox_file');
+                 clear ds_all_file;
                  x_q_feat = load(q_feat);
 
 
