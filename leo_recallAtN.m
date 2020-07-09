@@ -177,11 +177,11 @@
                         fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
 
 
-                        for j = 1:num_box
+                        for j = 1:num_box+1
                             q1 = single(feats(:,j));  %take column of each box
                             ds1= leo_yael_nn(query_full_feat, q1, k);
 
-                            ds_all_full = [ds_all_full ds1];
+                            ds_all_full = [ds_all_full ds1'];
                         end
 
                         clear feats;
