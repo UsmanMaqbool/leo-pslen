@@ -1,53 +1,86 @@
-% https://ch.mathworks.com/matlabcentral/answers/114546-maximum-a-posteriori-map-and-maximum-likelihood-ml  
+% https://ch.mathworks.com/help/stats/examples/classification.html#d120e3660
+
+clear all, close all , clc; 
+load fisheriris
+f = figure;
+gscatter(meas(:,1), meas(:,2), species,'rgb','osd');
+xlabel('Sepal length');
+ylabel('Sepal width');
+N = size(meas,1);
+
+lda = fitcdiscr(meas(:,1:2),species);
+ldaClass = resubPredict(lda);
+ldaResubErr = resubLoss(lda)
+figure
+ldaResubCM = confusionchart(species,ldaClass);
 
 
-clear all, close all , clc
-  sigma=1; % sigma is changed depending on the dispersion desired
-  N=500;
-  P1=sigma*randn(2,500)+[2;2]*ones(1,500);
-  P2=sigma*randn(2,500)+[-2;-2]*ones(1,500);
-  T1=ones(1,500);
-  T2=zeros(1,500);
-  %Data generation
-  plot(P1(1,:),P1(2,:),'ro',P2(1,:),P2(2,:),'go')
-  hold on
-  %we generates the random values
-  P=[P1,P2]; 
-  T=[T1,T2];
-  ind=randperm(2*N);
-  P=P(:,ind);
-  T=T(ind);
-  Mx1 = mean(P1,2);
-  Mx2 = mean(P2,2);
-  for i=1:N
-      p=P(:,i)
-      s1= exp(-(p-Mx1)'*(p-Mx1)/(2*sigma^2)) % First Maximum Likelihood classifier 
-      s2= exp(-(p-Mx2)'*(p-Mx2)/(2*sigma^2))  %For the last question here is the code of the function that defines the boundary:
-  end
-  
-  function p=frontiere(w,P,T,x)
-  %--------------------------------------------------------------------------
-  % function []=frontiere(W,P,T,x)
-  % This function displays the border of classification determined by the Bayesian 
-  %discriminant designed to separate between two distribution
-  % W: weight matrices model
-  % P: dataset
-  % T: desired output (Target)
-  % x: coordinates which determines the central position of distributions.
-  %--------------------------------------------------------------------------
-  %disp(' ')
-  %disp(' Determining the decision boundary')
-  %disp(' ')
-  X = [-x:0.02:x]; Y = [-x:0.02:x];
-      for i=1:size(X,2)
-          for j=1:size(Y,2)
-          p = [X(i);Y(j)];
-          % IN THIS PART WE MUST IMPLEMENT THE BAYESIAN DISCRIMINANT
-          % a2 = output of Bayes classifier
-          end
-      end
-  plotpv(P,T==1);
-  hold on
-  contour(X,Y,a2,1);
-  drawnow
-  end
+figure(f)
+bad = ~strcmp(ldaClass,species);
+hold on;
+plot(meas(bad,1), meas(bad,2), 'kx');
+hold off;
+
+[x,y] = meshgrid(4:.1:8,2:.1:4.5);
+x = x(:);
+y = y(:);
+j = classify([x y],meas(:,1:2),species);
+gscatter(x,y,j,'grb','sod')
+
+qda = fitcdiscr(meas(:,1:2),species,'DiscrimType','quadratic');
+qdaResubErr = resubLoss(qda)
+
+cp = cvpartition(species,'KFold',10)
+
+cvlda = crossval(lda,'CVPartition',cp);
+ldaCVErr = kfoldLoss(cvlda)
+cvqda = crossval(qda,'CVPartition',cp);
+qdaCVErr = kfoldLoss(cvqda)
+
+
+
+nbGau = fitcnb(meas(:,1:2), species);
+nbGauResubErr = resubLoss(nbGau)
+nbGauCV = crossval(nbGau, 'CVPartition',cp);
+nbGauCVErr = kfoldLoss(nbGauCV)
+
+labels = predict(nbGau, [x y]);
+gscatter(x,y,labels,'grb','sod')
+
+nbKD = fitcnb(meas(:,1:2), species, 'DistributionNames','kernel', 'Kernel','box');
+nbKDResubErr = resubLoss(nbKD)
+nbKDCV = crossval(nbKD, 'CVPartition',cp);
+nbKDCVErr = kfoldLoss(nbKDCV)
+
+labels = predict(nbKD, [x y]);
+gscatter(x,y,labels,'rgb','osd')
+t = fitctree(meas(:,1:2), species,'PredictorNames',{'SL' 'SW' });
+
+[grpname,node] = predict(t,[x y]);
+gscatter(x,y,grpname,'grb','sod')
+
+
+view(t,'Mode','graph');
+
+dtResubErr = resubLoss(t)
+
+cvt = crossval(t,'CVPartition',cp);
+dtCVErr = kfoldLoss(cvt)
+
+resubcost = resubLoss(t,'Subtrees','all');
+[cost,secost,ntermnodes,bestlevel] = cvloss(t,'Subtrees','all');
+plot(ntermnodes,cost,'b-', ntermnodes,resubcost,'r--')
+figure(gcf);
+xlabel('Number of terminal nodes');
+ylabel('Cost (misclassification error)')
+legend('Cross-validation','Resubstitution')
+
+[mincost,minloc] = min(cost);
+cutoff = mincost + secost(minloc);
+hold on
+plot([0 20], [cutoff cutoff], 'k:')
+plot(ntermnodes(bestlevel+1), cost(bestlevel+1), 'mo')
+legend('Cross-validation','Resubstitution','Min + 1 std. err.','Best choice')
+hold off
+
+cost(bestlevel+1)

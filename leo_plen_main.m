@@ -12,7 +12,7 @@ setup;
 % 
 
 %%
-iTestSample_Start= 1; startfrom = 1;  show_output = 0;
+iTestSample_Start= 1; startfrom = 1;  show_output = 3;
 f_dimension = 512;
 job_net = 'vd16_tokyoTM'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
 job_datasets = 'tokyo247';  %'tokyo247' 'pitts30k'
