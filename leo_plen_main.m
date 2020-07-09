@@ -37,7 +37,7 @@ elseif strcmp(job_datasets,'tokyo247')
     datasets_path = 'datasets/Test_247_Tokyo_GSV'; %% PC
 end
 
-save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_box_51_plus');
+%save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_box_51_plus');
 save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_box_52-correlation');
 
 save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results_512.mat');

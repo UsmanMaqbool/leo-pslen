@@ -71,7 +71,7 @@
     
     
     
-    num_box = 49; % Total = 10 (first one is the full images feature / box)
+    num_box = 50; % Total = 10 (first one is the full images feature / box)
     
     
     Top_boxes = 10; % will be used.
@@ -148,7 +148,7 @@
                 q_bbox = q_bbox (1:num_box+1,:);
 
 
-                k = Top_boxes;
+                k = num_box;
 
 
                 % Top 100 sample
@@ -177,7 +177,7 @@
                         fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
 
 
-                        for j = 1:Top_boxes
+                        for j = 1:num_box
                             q1 = single(feats(:,j));  %take column of each box
                             ds1= leo_yael_nn(query_full_feat, q1, k);
 
@@ -225,12 +225,9 @@
             
         for i=startfrom:total_top 
             x_q_feat_ds= x_q_feat.ds_all_file(i).ds_all_full; 
-            x_q_feat_ids_all = [x_q_feat_ids_all ;x_q_feat_ds];
 
         end
-        ds_box_all_sum = sum(x_q_feat_ids_all(:));
         
-        Prod_ds_box = exp_ds_pre/ds_box_all_sum;
     
         for i=startfrom:total_top 
  
@@ -239,7 +236,7 @@
            x_q_feat_ds_all = x_q_feat.ds_all_file(i).ds_all_full;
            x_q_feat_box_q =  x_q_feat.q_bbox;
            x_q_feat_box_db = x_q_feat.db_bbox_file(i).bboxdb;
-           x_q_feat_ids_all = x_q_feat.ids_all_file(i).ids_all ; 
+          % x_q_feat_ids_all = x_q_feat.ids_all_file(i).ids_all ; 
            
            
            % Full File Load
@@ -254,8 +251,8 @@
            
            
            ds_all = x_q_feat_ds_all(2:Top_boxes+1,:);
-           imgg_mat_box_q =  x_q_feat_box_q(2:num_box+1,:);
-           imgg_mat_box_db = x_q_feat_box_db(2:num_box+1,:);
+           imgg_mat_box_q =  x_q_feat_box_q(2:Top_boxes+1,:);
+           imgg_mat_box_db = x_q_feat_box_db(2:Top_boxes+1,:);
             
            
            x_q_feat_ds_all_1 = x_q_feat_ds_all(:,1);
@@ -267,8 +264,8 @@
             
             ds_all_inv = 1./(ds_all);
             
-            diff_ds_all = zeros(Top_boxes,Top_boxes);
-            diff_ds_all(1:Top_boxes-1,:) = diff(ds_all);
+            %diff_ds_all = zeros(Top_boxes,Top_boxes);
+           % diff_ds_all(1:Top_boxes-1,:) = diff(ds_all);
             diff2_ds_all = diff(diff(ds_all));
             diff2_ds_all_less = diff2_ds_all;
             diff2_ds_all_less(diff2_ds_all_less>0) = 0;
@@ -336,14 +333,14 @@
                
                
                S1(isnan(S1)) = 0;
-               S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
-               S8 = S7.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
+               %S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
+             %  S8 = S7.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
                S6 = S5.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
                sol_2 = sum(S1(:));
                sol_3= sum(S2(:));
                sol_4 = sum(S3(:));
                sol_5 = sum(S5(:)); %s_delta_mat(:);
-               sol_6 = sum(S8(:)); 
+               %sol_6 = sum(S8(:)); 
                
                
                Var_S5 = var(S3,1);
@@ -358,7 +355,7 @@
               check_heat = 0;
               %D_diff = ds_pre(i,1)-; %-s_delta_all;
                for jj = 1:Top_boxes
-                   S8_col = S8(:,jj);
+                   S8_col = S3(:,jj);
                    check_heat_mean = mean(S8_col);
 
                     S8_col(S8_col<check_heat_mean) = 0;
@@ -386,7 +383,7 @@
                check_heat = 0;
 %              D_diff = ds_pre(i,1)-; %-s_delta_all;
                for jj = 1:Top_boxes
-                   S8_col = S8(:,jj);
+                   S8_col = S3(:,jj);
                     
                     hm = find(S8_col~=0, 1, 'first');
                     if hm < 2 
@@ -398,7 +395,7 @@
            min_check = abs(min(ds_all(:))-ds_pre_min); 
            min_check_diff = abs(ds_pre(i,1)-ds_pre_min); 
 
-           [row,col,value] = find(ds_all~=0);
+           [row,col,value] = find(ds_all(1:10,1:10)~=0);
                            
 
            if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_q)
@@ -433,7 +430,7 @@
                         related_Box_dis_top = x_q_feat_ds_all(1,col(jjj));
                         related_Box_dis = x_q_feat_ds_all(row(jjj)+1,col(jjj));   
                         
-                        related_Box_q = x_q_feat_ids_all(row(jjj)+1,col(jjj));
+                        related_Box_q = 1; %x_q_feat_ids_all(row(jjj)+1,col(jjj));
                         related_Box_db = col(jjj);
                        
                     q_size = x_q_feat_box_q(1,3)*(x_q_feat_box_q(1,4));  % wrong size, 3 se multiply howa howa hai
