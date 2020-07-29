@@ -1,4 +1,4 @@
- function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,plen_opts)
+function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,plen_opts)
     if nargin<6, nSample= inf; end
     
     rngState= rng;
@@ -72,15 +72,9 @@
     
    % gmm_m =  load('pslen-tokyo2tokto-GMM-model.mat');
    % z_gmm = gmm_m.z;
-<<<<<<< HEAD
     %model_gmm = gmm_m.model;
     
-    num_box = 49; % Total = 10 (first one is the full images feature / box)
-=======
-  %  model_gmm = gmm_m.model;
-    
     num_box = 50; % Total = 10 (first one is the full images feature / box)
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
     
     
     Top_boxes = 10; % will be used.
@@ -88,15 +82,10 @@
     top_100 = [];
     total_top = 100; %100;0
     inegatif_i = [];
-<<<<<<< HEAD
-       gmm_gt = [];
+    gmm_gt = [];
+    crf_X = []; crf_h = []; crf_y = [];
 
   %  load('pslen-tokyo2tokto-GMM-model-trained.mat');
-=======
-     gmm_gt = [];
-
-%    load('pslen-tokyo2tokto-GMM-model-trained.mat');
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
 
  
 
@@ -120,13 +109,9 @@
         ds = ds_pre - min(ds_pre(:));
         ds = ds ./ max(ds(:)); 
 
-<<<<<<< HEAD
-        aa = isPos(iTest, ids);
+        gt_top = logical(isPos(iTest, ids));
        
         thisRecall_ori= cumsum(logical(isPos(iTest, ids)) ) > 0; % yahan se get karta hai %db.cp (close position)
-=======
-        thisRecall_ori= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
         ds_pre_gt = single(isPos(iTest, ids));
 %         if nnz(thisRecall_ori) == 0
 %             ds_pre_gt(iTestSample,1) = 0;
@@ -168,89 +153,13 @@
                  x_q_feat = load(q_feat);
                  x_q_feat_all(iTestSample) = struct ('x_q_feat', x_q_feat); 
             else
-<<<<<<< HEAD
 
                  q_feat = leo_estimate_box_features(qimg_path,model,db,q_feat);
-=======
-                im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
-
-                I = uint8(im{1,1});
-                [bbox, ~] =edgeBoxes(I,model);
-
-               % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
-
-                [hyt, wyd,~] = size(im{1,1});
-
-                mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
-
-                im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-                query_full_feat= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
-
-                db_bbox_top = [1 1 hyt wyd 1];
-                q_bbox = [db_bbox_top ; double(mat_boxes)*16];
-                q_bbox = q_bbox (1:num_box+1,:);
-
-
-                k = num_box;
-
-
-                % Top 100 sample
-
-                for jj = 1:total_top
-
-                        ds_all_full = [];
-                        ids_all = [];
-
-                        db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-                        im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-                        I = uint8(im{1,1});
-                        [bbox, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
-                        [hyt, wyd,~] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
-                      %  [bbox,im, E, hyt, wyd] = img_Bbox(db_img,model);
-
-                        mat_boxes = leo_slen_increase_boxes(bbox,hyt,wyd);
-
-                        im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-                        feats= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
-                        db_bbox_top = [1 1 hyt wyd 1];
-                        db_bbox = [db_bbox_top ; double(mat_boxes)*16];
-                        db_bbox = db_bbox (1:num_box+1,:);
-
-                        db_bbox_file(jj) = struct ('bboxdb', db_bbox); 
-
-                        fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
-
-
-                        for j = 1:num_box
-                            q1 = single(feats(:,j));  %take column of each box
-                               ds1= leo_yael_nn(query_full_feat, q1, k);
-
-                            ds_all_full = [ds_all_full ds1'];
-
-                        end
-
-                        clear feats;
-
-                        ds_all_file(jj) = struct ('ds_all_full', ds_all_full); 
-
-
-                end
-
-                  % save the files
-             if vt_type == 3
-                check_folder = fileparts(q_feat);
-                if ~exist(check_folder, 'dir')
-                    mkdir(check_folder)
-                end
-                 save(q_feat,'ds_all_file', 'q_bbox', 'db_bbox_file');
-                 clear ds_all_file;
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
                  x_q_feat = load(q_feat);
 
 
             end
 
-<<<<<<< HEAD
             
 %         else
 %             %     load(plen_opts.save_path_all); above loading in
@@ -259,16 +168,6 @@
 %             x_q_feat = x_q_feat_all(iTestSample).x_q_feat;
 %         end
 %         
-=======
-            end
-        else
-            %     load(plen_opts.save_path_all); above loading in
-            %     mentioned
-
-            x_q_feat = x_q_feat_all(iTestSample).x_q_feat;
-        end
-        
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
         %%% Loading End
 %%        
         SLEN_top = zeros(total_top,2); 
@@ -283,7 +182,6 @@
 
         % figure;
             
-<<<<<<< HEAD
         for i=startfrom:total_top   
             x_q_feat_ds= x_q_feat.ds_all_file(i).ds_all_full; % 51x50
             x_q_feat_ds_all = [x_q_feat_ds_all ;x_q_feat_ds];  % 5100 x 50
@@ -294,35 +192,17 @@
        
         
         %Prod_ds_box = exp_ds_pre/ds_box_all_sum;
-=======
-        for i=startfrom:total_top 
-            x_q_feat_ds= x_q_feat.ds_all_file(i).ds_all_full; 
-            x_q_feat_ids_all = [x_q_feat_ids_all ;x_q_feat_ds];
-
-        end
-        ds_box_all_sum = sum(x_q_feat_ids_all(:));
-        
-        Prod_ds_box = exp_ds_pre/ds_box_all_sum;
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
         
         
-
-
+        
         for i=startfrom:total_top 
  
             
            %Single File Load
-<<<<<<< HEAD
            x_q_feat_ds_all = x_q_feat.ds_all_file(i).ds_all_full; %51*50         first match ka box
            x_q_feat_box_q =  x_q_feat.q_bbox;                       %51*5
            x_q_feat_box_db = x_q_feat.db_bbox_file(i).bboxdb;       % 51*5
 %           x_q_feat_ids_all = x_q_feat.ids_all_file(i).ids_all ; 
-=======
-           x_q_feat_ds_all = x_q_feat.ds_all_file(i).ds_all_full;
-           x_q_feat_box_q =  x_q_feat.q_bbox;
-           x_q_feat_box_db = x_q_feat.db_bbox_file(i).bboxdb;
-         %  x_q_feat_ids_all = x_q_feat.ids_all_file(i).ids_all ; 
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
            
            
            % Full File Load
@@ -334,10 +214,9 @@
            sum_ds_all_Prob = sum(x_q_feat_ds_all_exp(:));
            
            
-<<<<<<< HEAD
            % excluding the top
            
-           ds_all = x_q_feat_ds_all(2:Top_boxes+1,2:Top_boxes+1);  
+           ds_all = x_q_feat_ds_all(1:Top_boxes+1,1:Top_boxes+1);  
            
            
            %drawRectangle(image, Xmin, Ymin, width, height)
@@ -345,11 +224,6 @@
            
            imgg_mat_box_q =  x_q_feat_box_q(2:num_box+1,:);    
            imgg_mat_box_db = x_q_feat_box_db(2:num_box+1,:);
-=======
-           ds_all = x_q_feat_ds_all(2:Top_boxes+1,:);
-           imgg_mat_box_q =  x_q_feat_box_q(2:Top_boxes+1,:);
-           imgg_mat_box_db = x_q_feat_box_db(2:Top_boxes+1,:);
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
             
            
            x_q_feat_ds_all_1 = x_q_feat_ds_all(:,1);
@@ -361,31 +235,21 @@
             
             ds_all_inv = 1./(ds_all);
             
-<<<<<<< HEAD
             diff_ds_all = zeros(Top_boxes,Top_boxes);
             %diff_ds_all(1:Top_boxes-1,:) = diff(ds_all);
-=======
-           % diff_ds_all = zeros(Top_boxes,Top_boxes);
-           % diff_ds_all(1:Top_boxes-1,:) = diff(ds_all);
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
 
             diff2_ds_all = diff(diff(ds_all));
             diff2_ds_all_less = diff2_ds_all;
             diff2_ds_all_less(diff2_ds_all_less>0) = 0;
         
             
-            ds_all_sub = ds_all(1:Top_boxes,1:Top_boxes);
+            ds_all_sub = ds_all(1:Top_boxes-1,1:Top_boxes-1);
             
             
             ds_all_less = ds_all_sub-ds_pre(100,1);
             ds_all_less_mean = mean(ds_all_less(:));
-             if i > 1
-                   relative_diff =  ds_pre(i,1) - ds_pre(i-1,1);
-            else
-                   relative_diff =  ds_pre(i+1,1) - ds_pre(i,1);
-            end
-           % exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
-            exp_relative_diff = exp(-1.*ds_pre_diff(i,1)); %*exp_related_Box_dis;
+
+ 
   
             s=sign(ds_all_less); s_inv=sign(ds_all_less);
             
@@ -407,8 +271,8 @@
             else
                    relative_diff =  ds_pre(i+1,1) - ds_pre(i,1);
             end
-           % exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
-            exp_relative_diff = exp(-1.*ds_pre_diff(i,1)); %*exp_related_Box_dis;
+            exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
+           % exp_relative_diff = exp(-1.*ds_pre_diff(i,1)); %*exp_related_Box_dis;
   
             
             
@@ -428,7 +292,7 @@
             
             D3 = sum(S3(:));
             
-             if show_output == 2
+            if show_output == 2
 
                 subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
                 subplot(2,2,2); imshow(imread(char(db_img))); %
@@ -449,77 +313,69 @@
             S1_diff = diff(S1);
             S2_diff = diff(S2);
             S3_diff = diff(S3);
-            S5 = S3(1:Top_boxes-1,:).*S1_diff;
-               
-               
-           S1(isnan(S1)) = 0;
-<<<<<<< HEAD
-  %         S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
-=======
-         %  S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
-         %  S8 = S7.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
-           S6 = S5.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
-           sol_2 = sum(S1(:));
-           sol_3= sum(S2(:));
-           sol_4 = sum(S3(:));
-           sol_5 = sum(S5(:)); %s_delta_mat(:);
-<<<<<<< HEAD
+%             S5 = S3(1:Top_boxes-1,:).*S1_diff;
+%                
+%                
+%            S1(isnan(S1)) = 0;
+%   %         S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
+%          %  S8 = S7.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
+%            S6 = S5.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
+%            sol_2 = sum(S1(:));
+%            sol_3= sum(S2(:));
+%            sol_4 = sum(S3(:));
+%            sol_5 = sum(S5(:)); %s_delta_mat(:);
 %           sol_6 = sum(S8(:)); 
-=======
-          % sol_6 = sum(S8(:)); 
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
 
 
-           Var_S5 = var(S3,1);
-           num_var_s5 = nnz(Var_S5);
-           sum_var_s5 = sum(Var_S5);
-           mum_var_s5 = num_var_s5*sum_var_s5;
+%            Var_S5 = var(S3,1);
+%            num_var_s5 = nnz(Var_S5);
+%            sum_var_s5 = sum(Var_S5);
+%            mum_var_s5 = num_var_s5*sum_var_s5;
                
               
                
-          heat3 = diff2_ds_all_less*ds_pre_inv;
+%           heat3 = diff2_ds_all_less*ds_pre_inv;
           %check_heat = sum(S8(2,:,:));
-          check_heat = 0;
-          %D_diff = ds_pre(i,1)-; %-s_delta_all;
-           for jj = 1:Top_boxes
-               S8_col = S3(:,jj);
-               check_heat_mean = mean(S8_col);
-
-                S8_col(S8_col<check_heat_mean) = 0;
-
-                hm = nnz(S8_col);
-                if hm >= 2 
-                    check_heat = check_heat+ sum(S8_col);
-                end
-           end
-
-             for jj = 1:Top_boxes
-
-                   S3_nnz = nnz(S3(:,jj));
-                   if S3_nnz < 2
-                       sum_diff2_ds_all(jj) = 0;
-
-                   end
-
-
-             end
-               nnz_black_check = nnz(sum_diff2_ds_all);
-               
-               top_candidates = sum_diff2_ds_all;
-               
-               check_heat = 0;
-%              D_diff = ds_pre(i,1)-; %-s_delta_all;
-               for jj = 1:Top_boxes
-                   S8_col = S3(:,jj);
-                    
-                    hm = find(S8_col~=0, 1, 'first');
-                    if hm < 2 
-                        check_heat = check_heat+ 1;
-                    end
-                   
-               end
-               norms_Avg = 0;
+%           check_heat = 0;
+%           %D_diff = ds_pre(i,1)-; %-s_delta_all;
+%            for jj = 1:Top_boxes
+%                S8_col = S3(:,jj);
+%                check_heat_mean = mean(S8_col);
+% 
+%                 S8_col(S8_col<check_heat_mean) = 0;
+% 
+%                 hm = nnz(S8_col);
+%                 if hm >= 2 
+%                     check_heat = check_heat+ sum(S8_col);
+%                 end
+%            end
+% 
+%              for jj = 1:Top_boxes
+% 
+%                    S3_nnz = nnz(S3(:,jj));
+%                    if S3_nnz < 2
+%                        sum_diff2_ds_all(jj) = 0;
+% 
+%                    end
+% 
+% 
+%              end
+%                nnz_black_check = nnz(sum_diff2_ds_all);
+%                
+%                top_candidates = sum_diff2_ds_all;
+%                
+%                check_heat = 0;
+% %              D_diff = ds_pre(i,1)-; %-s_delta_all;
+%                for jj = 1:Top_boxes
+%                    S8_col = S3(:,jj);
+%                     
+%                     hm = find(S8_col~=0, 1, 'first');
+%                     if hm < 2 
+%                         check_heat = check_heat+ 1;
+%                     end
+%                    
+%                end
+           norms_Avg = 0;
            min_check = abs(min(ds_all(:))-ds_pre_min); 
            min_check_diff = abs(ds_pre(i,1)-ds_pre_min); 
            ds_pre_1 = ds_pre;
@@ -527,14 +383,9 @@
            
            % ds_all input
            
-<<<<<<< HEAD
            [row,col,value] = find(ds_all~=0);
                            
             if show_output == 43
-=======
-           [row,col,value] = find(ds_all(1:10,1:10)~=0);
-                           
-            if show_output == 43
 
                 q_imgg = imread(char(qimg_path));
                 db_imgg = imread(char(db_img));
@@ -544,28 +395,6 @@
             end
             
             
-            for iii = 1:1
-                if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_q)
-
-                    box_var_db = [];
-                    box_var_q = [];
-                    AAsum =[];
-                    norms= [];
-                    Pslen_table = [];
-                    Pslen_table_neg = [];
-                    Pslen_table_43 = [];
-                if show_output == 43
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
-
-                q_imgg = imread(char(qimg_path));
-                db_imgg = imread(char(db_img));
-
-                qqq_img = q_imgg;
-                dbb_img = db_imgg;
-            end
-            
-            
-            for iii = 1:1
                 if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_q)
 
                     box_var_db = [];
@@ -586,23 +415,20 @@
 
 
                         related_Box_dis_top = x_q_feat_ds_all(1,col(jjj));
-                        related_Box_dis = x_q_feat_ds_all(row(jjj)+1,col(jjj));   
+                        related_Box_dis = x_q_feat_ds_all(row(jjj),col(jjj));   
 
-<<<<<<< HEAD
                         related_Box_q = row(jjj);
-=======
-                        related_Box_q = 1 %x_q_feat_ids_all(row(jjj)+1,col(jjj));
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
                         related_Box_db = col(jjj);
 
                         q_size = x_q_feat_box_q(1,3)*(x_q_feat_box_q(1,4));  % wrong size, 3 se multiply howa howa hai
                         db_size = x_q_feat_box_db(1,3)*(x_q_feat_box_db(1,4));
 
 
+                        bb_q = x_q_feat_box_q(related_Box_q,1:4);
+                        bb_db = x_q_feat_box_db(related_Box_db,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai                      
 
-                        bb_db = imgg_mat_box_db(related_Box_db,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai                      
-<<<<<<< HEAD
-%                         box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2] ;
+                        
+                        %                         box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2] ;
 %                         box_var_db = [box_var_db ; box_var_db_i];
 
 %                         % ye query k sath hona chahihye
@@ -611,25 +437,12 @@
 %                         else
 %                            bb_q = imgg_mat_box_q(related_Box_q,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai
 %                         end
-=======
-                        box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2] ;
-                        box_var_db = [box_var_db ; box_var_db_i];
 
-                        % ye query k sath hona chahihye
-                        if  size(imgg_mat_box_q,1) < related_Box_q
-                           bb_q = imgg_mat_box_q(1,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai
-                        else
-                          bb_q = imgg_mat_box_q(related_Box_q,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai
-                        end
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
-
-                        bb_q = imgg_mat_box_q(related_Box_q,1:4);
                         box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
                         box_var_q = [box_var_q ; box_var_q_i];
 
                         q_width_height = (bb_q(1,3)*bb_q(1,4))/(q_size);
                         db_width_height = (bb_db(1,3)*bb_db(1,4))/(db_size);
-<<<<<<< HEAD
 
                         exp_related_Box_dis = exp(-1.*related_Box_dis);%/ds_box_all_sum;
                         
@@ -639,7 +452,8 @@
                         
                         exp_q_width_height = exp(-1.*(q_width_height));
                         exp_db_width_height = exp(-1.*(db_width_height));
-
+                        
+                        
 
 
                         Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)),...
@@ -673,156 +487,21 @@
                         % [13]  single(bb_q(1,4)/bb_db(1,4))]
                         % width_height P of each box
 
-=======
-
-                        exp_related_Box_dis = exp(-1.*related_Box_dis);%/ds_box_all_sum;
-                        
-                         %sum_distance = ds_pre(i,1)+related_Box_dis-min(ds_all(:));
-
-                    sum_distance = ds_pre(i,1)+related_Box_dis-min(ds_all(:));
-                    exp_sum_distance = exp(-1.*sum_distance); %*exp_related_Box_dis;
-                    if i > 1
-                       relative_diff =  ds_pre(i,1) - ds_pre(i-1,1);
-                    else
-                       relative_diff =  ds_pre(i+1,1) - ds_pre(i,1);
-                    end
-                    exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
-
-                    exp_q_width_height = exp(-1.*(q_width_height));
-                    exp_db_width_height = exp(-1.*(db_width_height));
-
-
-
-                    Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)),...
-                        related_Box_dis_top exp(-1.*related_Box_dis_top)/exp_ds_pre_sum related_Box_dis,...
-                        exp(-1.*related_Box_dis)/exp_ds_pre_sum single(bb_q(1,3)/bb_db(1,3)) single(bb_q(1,4)/bb_db(1,4)) ,...
-                        exp_related_Box_dis exp_q_width_height exp_db_width_height, ...
-                        exp_sum_distance*exp_q_width_height*exp_db_width_height,...
-                        q_width_height db_width_height exp_sum_distance ] ;
-
-                        % Pslen_Current :  
-                        % 
-                        % [1-3] Querybox                    
-                        % Querybox# w h
-                        % [4-6] DB box
-                        % DBbox#    w h
-                        % [7]   related_Box_dis_top
-                        % box -> DB images
-                        % [8]   exp(-1.*related_Box_dis_top)/exp_ds_pre_sum
-                        % first row has box of query to full DB images
-                        % exp_ds_pre_sum is the sum of all db values       
-                        % exp_ds_pre = exp(-1.*ds_pre); (previous distances)
-                        % exp_ds_pre_sum = sum(exp_ds_pre);
-                        % [9]   related_Box_dis
-                        %       box to box matched distance
-                        % [10]  exp(-1.*related_Box_dis)/exp_ds_pre_sum
-                        % box to box matched distance / the pre sum
-                        % [11]  single(bb_q(1,3)/bb_db(1,3)) 
-                        % width of query vs width of db
-                        % [12]  single(bb_q(1,4)/bb_db(1,4))]
-                        % height of query vs heigth of the db image
-                        % [13]  single(bb_q(1,4)/bb_db(1,4))]
-                        % width_height P of each box
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
 
 
                         Pslen_table = [Pslen_table ; Pslen_current]; 
 
-                    end
+                     end
 
-               end
-
-
-               prob_ds_All = 1;
-               
-               mean_min_top = exp(-1.*max(x_q_feat_ds_all(1,:)));
-
-               if ~isempty(Pslen_table)
-                                  min_ds_pre_all = [min_ds_pre_all; ds_pre(1,1) ds_pre(i,1) min(ds_all(:)) mean(ds_all(:)) min(x_q_feat_ds_all(1,:)) mean(x_q_feat_ds_all(1,:)) mean(Pslen_table(:,17)) mean(Pslen_table(:,18)) ];
-
-               q_width_height_0 = Pslen_table(:,17);
-               q_width_height_1 = Pslen_table(:,17);
-               q_width_height_2 = Pslen_table(:,17);
-
-               q_width_height_0(q_width_height_0>1) = 0;
-               q_width_height_2(q_width_height_2<2) = 0;
-               q_width_height_1(q_width_height_1>2) = 0;
-               q_width_height_1(q_width_height_1<1) = 0;
-
-               db_width_height_0 = Pslen_table(:,18);
-               db_width_height_1 = Pslen_table(:,18);
-               db_width_height_2 = Pslen_table(:,18);
-
-               db_width_height_0(db_width_height_0>1) = 0;
-               db_width_height_2(db_width_height_2<2) = 0;
-               db_width_height_1(db_width_height_1>2) = 0;
-               db_width_height_1(db_width_height_1<1) = 0;
-
-<<<<<<< HEAD
-=======
-                           % subplot(2,3,3); bar(norms); %q_img
-                            subplot(2,3,4); imshow(qqq_img); %q_img
-                            if ~isempty(Pslen_table)
-                                title({
-                                [ 'min ds-pre ' num2str(min(ds_pre(:))) ]
-                                [ 'current ds-pre(i,1) = ' num2str(ds_pre(i,1)) ]
-                                [ 'min ds-all ' num2str(min(ds_all(:))) ]
-                                [ 'original-Pslen-table ' num2str(ds_pre(i,1)-min(Pslen_table(:,7))) ]
-                                });
-                            end
-                            subplot(2,3,5); imshow(dbb_img); %
-                            if ~isempty(Pslen_table_neg)
-                                title({
-                                [ 'Pslen-table-neg ' num2str(min(Pslen_table_neg(:,7))) ]
-                                [ 'original-Pslen-table-neg ' num2str(ds_pre(i,1)-min(Pslen_table_neg(:,7))) ]
-                                });
-                            end
-                             subplot(2,3,6); hold on; plot(box_var_db(jjj,:), 'ro-'); 
-                  
-                    
-                    end
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
-
-               prob_ds_pre_sum = exp_ds_pre(i,1)/exp_ds_pre_sum;
-
-               prob_ds_All = prob_ds_pre_sum*sum(Pslen_table(:,16));
-
-<<<<<<< HEAD
-               end
-               ds_pre_diff(i,2) = prob_ds_All;
-               ds_pre_gt(i,2) = prob_ds_All;
-               ds_pre_gt(i,3) = D_diff;
-
-        
-           
-          
-           D_diff = D_diff+prob_ds_All-mean_min_top;%;%-mean(ds_pre_diff);
-
-           prob_q_db(i,1) = D_diff;
-           ds_pre_1(i,1) = D_diff;    
-               
-              
-
-=======
-                    
-                    
-               end
-           min_ds_pre_all = [min_ds_pre_all; ds_pre(1,1) ds_pre(1,1)-min(ds_all(:)) ds_pre(i,1)-min(ds_all(:)) ds_pre(i,1) min(ds_all(:)) mean(ds_all(:)) min(x_q_feat_ds_all(1,:)) mean(x_q_feat_ds_all(1,:)) mean(Pslen_table(:,17)) mean(Pslen_table(:,18)) ];
-           exp_min_diff = exp(-1.*ds_pre(1,1)-min(ds_all(:))); %*exp_related_Box_dis;
-
-                        Pslen_table = [Pslen_table ; Pslen_current]; 
-
-                    end
-
-               end
+                end
 
 
                prob_ds_All = 1;
                
-               mean_min_top = exp(-1.*max(x_q_feat_ds_all(1,:)));
+               mean_min_top = exp(-1.*mean(x_q_feat_ds_all(1,:)));
 
                if ~isempty(Pslen_table)
-                            %      min_ds_pre_all = [min_ds_pre_all; ds_pre(1,1) ds_pre(i,1) min(ds_all(:)) mean(ds_all(:)) min(x_q_feat_ds_all(1,:)) mean(x_q_feat_ds_all(1,:)) mean(Pslen_table(:,17)) mean(Pslen_table(:,18)) ];
+               min_ds_pre_all = [min_ds_pre_all; ds_pre(1,1) ds_pre(i,1) min(ds_all(:)) mean(ds_all(:)) min(x_q_feat_ds_all(1,:)) mean(x_q_feat_ds_all(1,:)) mean(Pslen_table(:,17)) mean(Pslen_table(:,18)) ];
 
                q_width_height_0 = Pslen_table(:,17);
                q_width_height_1 = Pslen_table(:,17);
@@ -845,33 +524,37 @@
 
                prob_ds_pre_sum = exp_ds_pre(i,1)/exp_ds_pre_sum;
 
-               prob_ds_All = prob_ds_pre_sum*sum(Pslen_table(:,16));
+               prob_ds_All = sum(Pslen_table(:,16));
 
                end
-               ds_pre_diff(i,2) = prob_ds_All;
-               ds_pre_gt(i,2) = prob_ds_All;
-               ds_pre_gt(i,3) = D_diff;
+               %ds_pre_diff(i,2) = prob_ds_All;
+               %ds_pre_gt(i,2) = prob_ds_All;
+               %ds_pre_gt(i,3) = D_diff;
 
-        
+         
            
           
-           D_diff = D_diff+prob_ds_All-mean_min_top;%;%-mean(ds_pre_diff);
+           D_diff = D_diff+prob_ds_All-mean_min_top;%+mean_min_top;%;%-mean(ds_pre_diff);
 
-           prob_q_db(i,1) = D_diff;
-           ds_pre_1(i,1) = D_diff;    
+          % prob_q_db(i,1) = D_diff;
+          % ds_pre_1(i,1) = D_diff;    
                
-              
-
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
-            end
-           
            
           
-           
-           
+         pslen_ds_all=reshape(Pslen_table(:,16),11,11);
+         
+         crf_h = double(pslen_ds_all(1,:));
+         crf_X = double(pslen_ds_all(2:11,:));
+         crf_y = int8(gt_top(i,1))+1;
+        
+         
+         crf_data = struct ('Y', crf_y,'H', crf_h,'X', crf_X); 
+         data(:,i+((iTestSample-1)*100)) = {crf_data};
+          
+        
           
              
-           ds_new_top(i,1) = abs(D_diff);
+         ds_new_top(i,1) = abs(D_diff);
            
          Pslen_table = [];
 
@@ -893,19 +576,19 @@
 % 
 % 
 %         end
-          gmm_gt = [gmm_gt ; ds_pre_gt];
+        
+        end
+   
+        
+          %gmm_gt = [gmm_gt ; ds_pre_gt];
           
-          X2 = ds_pre_gt(:,2:3);
-          T = array2table(X2,...
-    'VariableNames',{'VarName2','VarName3'});
+         % X2 = ds_pre_gt(:,2:3);
+         % T = array2table(X2,...
+  %  'VariableNames',{'VarName2','VarName3'});
 %          yfit = trainedModel.predictFcn(T) ;
         
         [C c_i] = sortrows(ds_new_top);
-<<<<<<< HEAD
        % [C c_i] = sortrows(yfit,'descend');
-=======
-        %[C c_i] = sortrows(yfit,'descend');
->>>>>>> ef0b888eb1a1bba9ce240762c20bc18ae795ac09
 
         idss = ids;
         inegatifss = inegatif_i;
@@ -959,7 +642,7 @@
 
          end
          
-          if show_output == 33
+         if show_output == 33
 
                 subplot(2,6,1); imshow(imread(char(qimg_path))); %q_img
                 db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(1,1),1});  
@@ -1001,8 +684,8 @@
         iTestSample
         %% LEO END
             
-        
-       
+             
+ 
         
         
         
@@ -1060,6 +743,11 @@
     save('pslen-tokyo2tokto-vt-7.mat','x_q_feat_all');
     save('pslen-tokyo2tokto-GMM-87.mat','gmm_gt');
 
+    ck = struct('data',{data});
+
+    save('pslen-tokyo2tokto-ck.mat','ck');
+    
+    
     relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');
     
     rng(rngState);

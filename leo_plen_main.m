@@ -3,13 +3,7 @@ clear all;
 
 addpath(genpath(pwd));
 setup; 
-% check input list 'xinput list'
-%system('xinput set-prop 17 "Synaptics Two-Finger Scrolling" 1 0');
-%system('xinput set-prop 12 "Synaptics Two-Finger Scrolling" 1 0');
 
-%3 -> 54.000000 72.000000 97.000000 78.000000 16.000000   
-%   ==>> 3.000000 75.000000 8.000000 82.000000 4.000000 
-%24
 
 %%
 iTestSample_Start= 1; startfrom = 1;  show_output = 0;
