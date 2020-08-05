@@ -216,14 +216,15 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
            
            % excluding the top
            
-           ds_all = x_q_feat_ds_all(1:Top_boxes+1,1:Top_boxes+1);  
-           
+           ds_all = x_q_feat_ds_all;%(2:end,:);  
+           [ds_all_sort ds_all_sort_index] = sort(ds_all);
+           ds_all_sort_10 = ds_all_sort(2:Top_boxes+1,1:Top_boxes); 
            
            %drawRectangle(image, Xmin, Ymin, width, height)
            %img = drawRectangle(I, bb(2), bb(1), bb(4), bb(3));
            
-           imgg_mat_box_q =  x_q_feat_box_q(2:num_box+1,:);    
-           imgg_mat_box_db = x_q_feat_box_db(2:num_box+1,:);
+           imgg_mat_box_q =  x_q_feat_box_q; %(2:num_box+1,:);    
+           imgg_mat_box_db = x_q_feat_box_db; %(2:num_box+1,:);
             
            
            x_q_feat_ds_all_1 = x_q_feat_ds_all(:,1);
@@ -246,144 +247,31 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
             ds_all_sub = ds_all(1:Top_boxes-1,1:Top_boxes-1);
             
             
-            ds_all_less = ds_all_sub-ds_pre(100,1);
-            ds_all_less_mean = mean(ds_all_less(:));
+            ds_all_less = ds_pre(100,1)-ds_all;
 
- 
-  
-            s=sign(ds_all_less); s_inv=sign(ds_all_less);
+            s=sign(ds_all_less); 
             
             ipositif=sum(s(:)==1);
             inegatif=sum(s(:)==-1);
             inegatif_i=[inegatif_i ;inegatif];
 
-            S_less = s; S_less(S_less>0) = 0; 
+            S_less = s; S_less(S_less<0) = 0; 
             S_less = abs(S_less).*ds_all_less; 
             
-            S_less_diff = diff(S_less);
-            S_less_mean = sum(sum(S_less/inegatif)); 
-           
+            
             D_diff = ds_pre(i,1); %-s_delta_all;
-            ds_pre_diff_mean = mean(ds_pre_diff(:));
             
             if i > 1
                    relative_diff =  ds_pre(i,1) - ds_pre(i-1,1);
             else
                    relative_diff =  ds_pre(i+1,1) - ds_pre(i,1);
             end
-            exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
-           % exp_relative_diff = exp(-1.*ds_pre_diff(i,1)); %*exp_related_Box_dis;
-  
+      
+            %exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
+            exp_relative_diff = exp(-1.*ds_pre_diff(i,1)); %*exp_related_Box_dis;
             
-            
-            
-            sol_1 = sum(S_less_diff(:));
-
-            S1 = S_less; S1_mean = mean(S1(:),'omitnan');
-            S1(S1>S1_mean) = NaN;
-            S2 = S1; S2_mean = mean(S2(:),'omitnan');
-            S2(S2>S2_mean) = NaN;
-            S3 = S2; S3_mean = mean(S3(:),'omitnan');
-
-            S3(S3>S3_mean) = NaN;
-            S1(isnan(S1)) = 0;
-            S2(isnan(S2)) = 0;
-            S3(isnan(S3)) = 0;
-            
-            D3 = sum(S3(:));
-            
-            if show_output == 2
-
-                subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
-                subplot(2,2,2); imshow(imread(char(db_img))); %
-
-                
-                subplot(2,2,3); h = heatmap(S1);
-                subplot(2,2,4); h = heatmap(S3); % with plus is wokring
-              %  subplot(2,2,1); h = heatmap(diff_ds_all/ds_pre_inv);
-              %  subplot(2,2,2); h = heatmap(diff2_ds_all/ds_pre_inv);
-%                fprintf( '==>> Distance %f ~ Greator Values %f %f \n Less Values %f %f ~ Min %f \n',ds_pre(i,1), s_delta_all,ipositif, S_great, inegatif, S_less);
-              %  fprintf('%f %f %f %f %f %f %f %f %f %f\n',(Top_boxes*Top_boxes)/inegatif, D_diff, D_diff+ds_all_less_mean, D_diff-(ds_all_less_mean/D), D_diff-s_delta_mat, D_diff+s_delta_mat,ds_all_less_mean+s_delta_mat, s_delta_mat/ds_all_less_mean, D/(D_diff-ds_all_less_mean), D);
-               % fprintf('\n For %f %f %f %f %f %f %f %f %f', D_diff, D, boxes_per_less, Top_boxes, inegatif, s_delta_mat, ds_all_less_mean, mean(S_less_diff(:)),min(S_less_diff(:)));
-             %   fprintf('%f -> %f %f %f %f %f %f %f %f \n',D_diff,D_diff+ S_less_mean,D_diff+ S_less_n_mean, D_diff+S_less_inv_mean,D_diff+ S_less_inv_n_mean,D_diff+ S_less_diff,D_diff+ S_less_n_diff, D_diff+S_less_inv_diff,D_diff+ S_less_inv_n_diff);
-
-            end
-            
-            
-            S1_diff = diff(S1);
-            S2_diff = diff(S2);
-            S3_diff = diff(S3);
-%             S5 = S3(1:Top_boxes-1,:).*S1_diff;
-%                
-%                
-%            S1(isnan(S1)) = 0;
-%   %         S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
-%          %  S8 = S7.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
-%            S6 = S5.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
-%            sol_2 = sum(S1(:));
-%            sol_3= sum(S2(:));
-%            sol_4 = sum(S3(:));
-%            sol_5 = sum(S5(:)); %s_delta_mat(:);
-%           sol_6 = sum(S8(:)); 
-
-
-%            Var_S5 = var(S3,1);
-%            num_var_s5 = nnz(Var_S5);
-%            sum_var_s5 = sum(Var_S5);
-%            mum_var_s5 = num_var_s5*sum_var_s5;
-               
-              
-               
-%           heat3 = diff2_ds_all_less*ds_pre_inv;
-          %check_heat = sum(S8(2,:,:));
-%           check_heat = 0;
-%           %D_diff = ds_pre(i,1)-; %-s_delta_all;
-%            for jj = 1:Top_boxes
-%                S8_col = S3(:,jj);
-%                check_heat_mean = mean(S8_col);
-% 
-%                 S8_col(S8_col<check_heat_mean) = 0;
-% 
-%                 hm = nnz(S8_col);
-%                 if hm >= 2 
-%                     check_heat = check_heat+ sum(S8_col);
-%                 end
-%            end
-% 
-%              for jj = 1:Top_boxes
-% 
-%                    S3_nnz = nnz(S3(:,jj));
-%                    if S3_nnz < 2
-%                        sum_diff2_ds_all(jj) = 0;
-% 
-%                    end
-% 
-% 
-%              end
-%                nnz_black_check = nnz(sum_diff2_ds_all);
-%                
-%                top_candidates = sum_diff2_ds_all;
-%                
-%                check_heat = 0;
-% %              D_diff = ds_pre(i,1)-; %-s_delta_all;
-%                for jj = 1:Top_boxes
-%                    S8_col = S3(:,jj);
-%                     
-%                     hm = find(S8_col~=0, 1, 'first');
-%                     if hm < 2 
-%                         check_heat = check_heat+ 1;
-%                     end
-%                    
-%                end
-           norms_Avg = 0;
-           min_check = abs(min(ds_all(:))-ds_pre_min); 
-           min_check_diff = abs(ds_pre(i,1)-ds_pre_min); 
-           ds_pre_1 = ds_pre;
-          
            
-           % ds_all input
-           
-           [row,col,value] = find(ds_all~=0);
+            [row,col,value] = find(ds_all_sort~=0);
                            
             if show_output == 43
 
@@ -395,7 +283,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
             end
             
             
-                if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_q)
+            if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_q)
 
                     box_var_db = [];
                     box_var_q = [];
@@ -412,140 +300,89 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
                         %DB8
                         %
 
-
-
-                        related_Box_dis_top = x_q_feat_ds_all(1,col(jjj));
+                        %related_Box_dis_top = x_q_feat_ds_all(1,col(jjj));
+                        
+                       
                         related_Box_dis = x_q_feat_ds_all(row(jjj),col(jjj));   
+                        exp_related_Box_dis = exp(-1.*related_Box_dis);%/ds_box_all_sum;
 
-                        related_Box_q = row(jjj);
                         related_Box_db = col(jjj);
+                        
+                        %related_Box_q = row(jjj);
+                        related_Box_q = ds_all_sort_index(row(jjj),col(jjj));
+
+                        
+                        bb_q = x_q_feat_box_q(related_Box_q,1:4);
+                        bb_db = x_q_feat_box_db(related_Box_db,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai                      
 
                         q_size = x_q_feat_box_q(1,3)*(x_q_feat_box_q(1,4));  % wrong size, 3 se multiply howa howa hai
                         db_size = x_q_feat_box_db(1,3)*(x_q_feat_box_db(1,4));
 
-
-                        bb_q = x_q_feat_box_q(related_Box_q,1:4);
-                        bb_db = x_q_feat_box_db(related_Box_db,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai                      
-
-                        
-                        %                         box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2] ;
-%                         box_var_db = [box_var_db ; box_var_db_i];
-
-%                         % ye query k sath hona chahihye
-%                         if  size(imgg_mat_box_q,1) < related_Box_q
-%                            bb_q = imgg_mat_box_q(1,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai
-%                         else
-%                            bb_q = imgg_mat_box_q(related_Box_q,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai
-%                         end
-
-                        box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
-                        box_var_q = [box_var_q ; box_var_q_i];
-
                         q_width_height = (bb_q(1,3)*bb_q(1,4))/(q_size);
                         db_width_height = (bb_db(1,3)*bb_db(1,4))/(db_size);
 
-                        exp_related_Box_dis = exp(-1.*related_Box_dis);%/ds_box_all_sum;
-                        
-
-                        sum_distance = ds_pre(1,1)+related_Box_dis-min(ds_all(:));
-                        exp_sum_distance = exp(-1.*sum_distance); %*exp_related_Box_dis;
-                        
                         exp_q_width_height = exp(-1.*(q_width_height));
                         exp_db_width_height = exp(-1.*(db_width_height));
+
                         
-                        
+                        sum_distance = ds_pre(1,1)+related_Box_dis-min(ds_all_sort_10(:));
+                        exp_sum_distance = exp(-1.*sum_distance); %*exp_related_Box_dis;
 
+                        ds_all(related_Box_q,related_Box_db) = exp_relative_diff*exp_sum_distance*exp_q_width_height*exp_db_width_height;
+ 
+                    end
+            end
+           
+           
+           [ds_all_sort ds_all_sort_index] = sort(ds_all,'descend');
+           %ds_all_sort_10 = ds_all_sort(2:Top_boxes,1:Top_boxes-1);
+           ds_all_sort_10 = ds_all_sort;
+           
+           
+            
+            S_less_diff = diff(S_less);
+            
+            sol_1 = sum(S_less_diff(:));
 
-                        Pslen_current = [single(related_Box_q) single(bb_q(1,3:4)) single(related_Box_db) single(bb_db(1,3:4)),...
-                            related_Box_dis_top exp(-1.*related_Box_dis_top)/exp_ds_pre_sum related_Box_dis,...
-                            exp(-1.*related_Box_dis)/exp_ds_pre_sum single(bb_q(1,3)/bb_db(1,3)) single(bb_q(1,4)/bb_db(1,4)) ,...
-                            exp_related_Box_dis exp_q_width_height exp_db_width_height, ...
-                            exp_relative_diff*exp_sum_distance*exp_q_width_height*exp_db_width_height,...
-                            q_width_height db_width_height relative_diff] ;
+            S1 = S_less; S1_mean = mean(S1(:),'omitnan');
+            S1(S1>S1_mean) = NaN;
+            S2 = S1; S2_mean = mean(S2(:),'omitnan');
+            S2(S2>S2_mean) = NaN;
+            S3 = S2; S3_mean = mean(S3(:),'omitnan');
 
-                        % Pslen_Current :  
-                        % 
-                        % [1-3] Querybox                    
-                        % Querybox# w h
-                        % [4-6] DB box
-                        % DBbox#    w h
-                        % [7]   related_Box_dis_top
-                        % box -> DB images
-                        % [8]   exp(-1.*related_Box_dis_top)/exp_ds_pre_sum
-                        % first row has box of query to full DB images
-                        % exp_ds_pre_sum is the sum of all db values       
-                        % exp_ds_pre = exp(-1.*ds_pre); (previous distances)
-                        % exp_ds_pre_sum = sum(exp_ds_pre);
-                        % [9]   related_Box_dis
-                        %       box to box matched distance
-                        % [10]  exp(-1.*related_Box_dis)/exp_ds_pre_sum
-                        % box to box matched distance / the pre sum
-                        % [11]  single(bb_q(1,3)/bb_db(1,3)) 
-                        % width of query vs width of db
-                        % [12]  single(bb_q(1,4)/bb_db(1,4))]
-                        % height of query vs heigth of the db image
-                        % [13]  single(bb_q(1,4)/bb_db(1,4))]
-                        % width_height P of each box
+            S3(S3>S3_mean) = NaN;
+            S1(isnan(S1)) = 0;
+            S2(isnan(S2)) = 0;
+            S3(isnan(S3)) = 0;
+            
+            D3 = sum(S3(:));
+            
 
-
-
-                        Pslen_table = [Pslen_table ; Pslen_current]; 
-
-                     end
-
-                end
-
-
-               prob_ds_All = 1;
+           % prob_ds_All = sum(sum(ds_all(2:Top_boxes+1,1:Top_boxes)));
+            prob_ds_All = sum(sum(ds_all_sort(2:Top_boxes+1,1:Top_boxes)));
+           % ds_all input
+           
+           mean_min_top = exp(-1.*mean(x_q_feat_ds_all(1,1:10))); 
                
-               mean_min_top = exp(-1.*mean(x_q_feat_ds_all(1,:)));
-
-               if ~isempty(Pslen_table)
-               min_ds_pre_all = [min_ds_pre_all; ds_pre(1,1) ds_pre(i,1) min(ds_all(:)) mean(ds_all(:)) min(x_q_feat_ds_all(1,:)) mean(x_q_feat_ds_all(1,:)) mean(Pslen_table(:,17)) mean(Pslen_table(:,18)) ];
-
-               q_width_height_0 = Pslen_table(:,17);
-               q_width_height_1 = Pslen_table(:,17);
-               q_width_height_2 = Pslen_table(:,17);
-
-               q_width_height_0(q_width_height_0>1) = 0;
-               q_width_height_2(q_width_height_2<2) = 0;
-               q_width_height_1(q_width_height_1>2) = 0;
-               q_width_height_1(q_width_height_1<1) = 0;
-
-               db_width_height_0 = Pslen_table(:,18);
-               db_width_height_1 = Pslen_table(:,18);
-               db_width_height_2 = Pslen_table(:,18);
-
-               db_width_height_0(db_width_height_0>1) = 0;
-               db_width_height_2(db_width_height_2<2) = 0;
-               db_width_height_1(db_width_height_1>2) = 0;
-               db_width_height_1(db_width_height_1<1) = 0;
-
-
-               prob_ds_pre_sum = exp_ds_pre(i,1)/exp_ds_pre_sum;
-
-               prob_ds_All = sum(Pslen_table(:,16));
-
-               end
-               %ds_pre_diff(i,2) = prob_ds_All;
-               %ds_pre_gt(i,2) = prob_ds_All;
-               %ds_pre_gt(i,3) = D_diff;
+           prob_ds_pre_sum = exp_ds_pre(i,1)/exp_ds_pre_sum;
+           prob_ds_All = prob_ds_pre_sum*prob_ds_All; 
 
          
            
           
-           D_diff = D_diff+prob_ds_All-mean_min_top;%+mean_min_top;%;%-mean(ds_pre_diff);
+           D_diff = D_diff+prob_ds_All-mean_min_top;%+mean_min_top; %-mean_min_top;%+mean_min_top;%;%-mean(ds_pre_diff);
 
           % prob_q_db(i,1) = D_diff;
           % ds_pre_1(i,1) = D_diff;    
                
            
           
-         pslen_ds_all=reshape(Pslen_table(:,16),11,11);
+        % pslen_ds_all=reshape(Pslen_table(:,16),10,10);
+       %  pslen_ds_all=Pslen_table(:,16);
          
-         crf_h = double(pslen_ds_all(1,:));
-         crf_X = double(pslen_ds_all(2:11,:));
-         crf_y = int8(gt_top(i,1))+1;
+         crf_h = 0;%double(pslen_ds_all(1,:));
+         crf_X = 0;%double(pslen_ds_all(2:11,:));
+         crf_y = 0;%int8(gt_top(i,1))+1;
         
          
          crf_data = struct ('Y', crf_y,'H', crf_h,'X', crf_X); 
