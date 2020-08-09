@@ -70,7 +70,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
     
-   % gmm_m =  load('pslen-tokyo2tokto-GMM-model.mat');
+    g_mdl =  load('ensembleOfDecisionTreesModel-all.mat');
    % z_gmm = gmm_m.z;
     %model_gmm = gmm_m.model;
     
@@ -357,20 +357,20 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
             
             D3 = sum(S3(:));
             
+            prob_ds_pre_sum = exp_ds_pre(i,1)/exp_ds_pre_sum;
+            Pslen_mat = prob_ds_pre_sum*ds_all_sort(2:Top_boxes+1,1:Top_boxes);
 
            % prob_ds_All = sum(sum(ds_all(2:Top_boxes+1,1:Top_boxes)));
-            prob_ds_All = sum(sum(ds_all_sort(2:Top_boxes+1,1:Top_boxes)));
+            prob_ds_All = sum(Pslen_mat(:));
            % ds_all input
            
            mean_min_top = exp(-1.*mean(x_q_feat_ds_all(1,1:10))); 
                
-           prob_ds_pre_sum = exp_ds_pre(i,1)/exp_ds_pre_sum;
-           prob_ds_All = prob_ds_pre_sum*prob_ds_All; 
-
+         
          
            
           
-           D_diff = D_diff+prob_ds_All-mean_min_top;%+mean_min_top; %-mean_min_top;%+mean_min_top;%;%-mean(ds_pre_diff);
+         %  D_diff = D_diff+prob_ds_All-mean_min_top;%-mean(ds_pre_diff);
 
           % prob_q_db(i,1) = D_diff;
           % ds_pre_1(i,1) = D_diff;    
@@ -380,19 +380,29 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
         % pslen_ds_all=reshape(Pslen_table(:,16),10,10);
        %  pslen_ds_all=Pslen_table(:,16);
          
-         crf_h = 0;%double(pslen_ds_all(1,:));
-         crf_X = 0;%double(pslen_ds_all(2:11,:));
-         crf_y = 0;%int8(gt_top(i,1))+1;
+         crf_h = x_q_feat_ds_all(1,1:10);%double(pslen_ds_all(1,:));
+         crf_X = Pslen_mat;%double(pslen_ds_all(2:11,:));
+         crf_pre = ds_pre(i,1);
+         crf_y = int8(gt_top(i,1))+1;
         
          
-         crf_data = struct ('Y', crf_y,'H', crf_h,'X', crf_X); 
-         data(:,i+((iTestSample-1)*100)) = {crf_data};
+         crf_data = struct ('Y', crf_y,'H', crf_h,'X', crf_X, 'pre', crf_pre); 
+         data(:,i+((iTestSample-1)*100)) = crf_data;
           
+         XX = crf_X';
+         XX = reshape(XX,1,[]);
+         
+         pslen_pridict = [crf_pre crf_h XX];
+
         
-          
-             
+         D_diff_predict = predict(g_mdl.mdls{5},pslen_pridict);
+         
+         %D_diff = D_diff+(prob_ds_All-mean_min_top)+D_diff_predict;%-mean(ds_pre_diff);
+         D_diff = D_diff/D_diff_predict;%+prob_ds_All-mean_min_top;
+         
          ds_new_top(i,1) = abs(D_diff);
-           
+         %ds_new_top(i,1) = D_diff_predict;
+         
          Pslen_table = [];
 
          ds_all = [];
@@ -417,15 +427,9 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
         end
    
         
-          %gmm_gt = [gmm_gt ; ds_pre_gt];
-          
-         % X2 = ds_pre_gt(:,2:3);
-         % T = array2table(X2,...
-  %  'VariableNames',{'VarName2','VarName3'});
-%          yfit = trainedModel.predictFcn(T) ;
         
         [C c_i] = sortrows(ds_new_top);
-       % [C c_i] = sortrows(yfit,'descend');
+       % [C c_i] = sortrows(ds_new_top,'descend');
 
         idss = ids;
         inegatifss = inegatif_i;
@@ -577,12 +581,12 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     
     res= mean(printRecalls);
     relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
-    save('pslen-tokyo2tokto-vt-7.mat','x_q_feat_all');
+   % save('pslen-tokyo2tokto-vt-7.mat','x_q_feat_all');
     save('pslen-tokyo2tokto-GMM-87.mat','gmm_gt');
 
-    ck = struct('data',{data});
+    %ck = struct('data',{data});
 
-    save('pslen-tokyo2tokto-ck.mat','ck');
+    save('pslen-tokyo2tokto-data.mat','data');
     
     
     relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');

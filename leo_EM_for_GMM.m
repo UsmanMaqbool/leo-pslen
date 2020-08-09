@@ -1,30 +1,42 @@
-%This function is robust and efficient yet the code structure is organized so that it is easy to read. Please try following code for a demo:
+
 close all; clear;
-d = 2;
-k = 2;
-% n = 500;
-% [X,label] = mixGaussRnd(d,k,n);
-% plotClass(X,label);
-% 
-% m = floor(n/2);
-% X1 = X(:,1:m);
-% X2 = X(:,(m+1):end);
+
+load('pslen-tokyo2tokto-data.mat');
+
+aa = data(1).H;
+HH = [];
+YY = [];
+for i = 1:size(data,2)
+    XX = data(i).X';
+    XX = reshape(XX,1,[]);
+    HH = [HH ; data(i).pre data(i).H XX double(data(i).Y)];
+
+end
+Data = array2table(HH);
+hypopts = struct('ShowPlots',false,'Verbose',0,'UseParallel',true);
+poolobj = gcp;
+
+% Ensemble of Decision trees
+%mdl = fitcensemble(Data,'HH112','Learners','tree', ...
+   % 'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+
+mdls{1} = fitcsvm(Data,'HH112','KernelFunction','polynomial','Standardize','on', ...
+    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+mdls{2} = fitcsvm(Data,'HH112','KernelFunction','gaussian','Standardize','on', ...
+    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+
+% Decision tree
+mdls{3} = fitctree(Data,'HH112', ...
+    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+
+% Ensemble of Decision trees
+mdls{4} = fitcensemble(Data,'HH112','Learners','tree', ...
+    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+
+% Naive Bayes
+mdls{5} = fitcnb(Data,'HH112', ...
+    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
 
 
-aa = load('pslen-tokyo2tokto-GMM.mat');
-X = aa.gmm_gt(:,2:3)';
-label = aa.gmm_gt(:,1)'+1;
-[z,model,llh] = mixGaussEm(X,k);
-save('pslen-tokyo2tokto-GMM-model.mat','z','model');
 
-
-% train
-[z1,model,llh] = mixGaussEm(X1,k);
-figure;
-plot(llh);
-figure;
-plotClass(X1,z1);
-% predict
-z2 = mixGaussPred(X2,model);
-figure;
-plotClass(X2,z2);
+save('ensembleOfDecisionTreesModel-all','mdls');
