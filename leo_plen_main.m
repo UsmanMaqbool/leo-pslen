@@ -6,9 +6,9 @@ setup;
 
 
 %%
-iTestSample_Start= 1; startfrom = 1;  show_output = 3;
+iTestSample_Start= 1; startfrom = 1;  show_output = 0;
 f_dimension = 512;
-job_net = 'vd16_tokyoTM'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
+job_net = 'vd16_pitts30k'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
 job_datasets = 'tokyo247';  %'tokyo247' 'pitts30k'
 
 %%
@@ -59,11 +59,13 @@ save_path_all = strcat('/home/leo/mega/pslen/all/',job_net,'_to_',job_datasets,'
 
 
 %% Pitts 2 TOKYO DATASET
-%netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
+netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
 
-%dbTest= dbTokyo247();
+dbTest= dbTokyo247();
 
 %datasets_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV'; %% LAPTOP
+datasets_path = 'datasets/Test_247_Tokyo_GSV'; %% LAPTOP
+
 %save_path = '/home/leo/MEGA/vt-7-pitts2tokyo';
 
 

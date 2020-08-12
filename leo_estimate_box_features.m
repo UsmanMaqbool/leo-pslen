@@ -1,4 +1,4 @@
-function q_feat = leo_estimate_box_features(qimg_path, model, db,q_feat)
+function q_feat = leo_estimate_box_features(qimg_path, model, db,q_feat,net,num_box,total_top,dataset_path,ids,iTestSample)
 
 im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
@@ -25,7 +25,7 @@ k = num_box;
 for jj = 1:total_top
 
         ds_all_full = [];
-        ids_all = [];
+%         ids_all = [];
 
         db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
         im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 

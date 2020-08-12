@@ -70,7 +70,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
     
-    g_mdl =  load('ensembleOfDecisionTreesModel-all.mat');
+    g_mdl =  load('/home/leo/mega/pslen/models/ensembleOfDecisionTreesModel-all.mat');
    % z_gmm = gmm_m.z;
     %model_gmm = gmm_m.model;
     
@@ -154,7 +154,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
                  x_q_feat_all(iTestSample) = struct ('x_q_feat', x_q_feat); 
             else
 
-                 q_feat = leo_estimate_box_features(qimg_path,model,db,q_feat);
+                 q_feat = leo_estimate_box_features(qimg_path,model,db,q_feat,net,num_box,total_top,dataset_path,ids,iTestSample);
                  x_q_feat = load(q_feat);
 
 
