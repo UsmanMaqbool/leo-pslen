@@ -1,7 +1,7 @@
 
-close all; clear;
-
-load('pslen-tokyo2tokto-data.mat');
+close all; clear all;
+clc;
+load('pslen-pitstopits-data-512.mat');
 
 aa = data(1).H;
 HH = [];
@@ -39,4 +39,4 @@ mdls{5} = fitcnb(Data,'HH112', ...
 
 
 
-save('ensembleOfDecisionTreesModel-all','mdls');
+save('ensemblesModel-pslen-pitts2tokyo-data-512','mdls');

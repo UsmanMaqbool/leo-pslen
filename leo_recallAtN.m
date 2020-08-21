@@ -70,9 +70,10 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
     
-    g_mdl =  load('/home/leo/mega/pslen/models/ensembleOfDecisionTreesModel-all.mat');
-   % z_gmm = gmm_m.z;
-    %model_gmm = gmm_m.model;
+  %  g_mdl =  load('/home/leo/mega/pslen/models/ensembleOfDecisionTreesModel-all.mat');
+    g_mdl =  load('/home/leo/mega/pslen/models/ensemblesModel-pslen-pitts2tokyo-data-512');
+    
+
     
     num_box = 50; % Total = 10 (first one is the full images feature / box)
     
@@ -85,7 +86,6 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     gmm_gt = [];
     crf_X = []; crf_h = []; crf_y = [];
 
-  %  load('pslen-tokyo2tokto-GMM-model-trained.mat');
 
  
 
@@ -101,53 +101,25 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
         
         [ids ds_pre]= searcher(iTest, nTop); % Main function to find top 100 candidaes
         ds_pre_max = max(ds_pre); ds_pre_min = min(ds_pre);
-               ds_pre_mean = mean(ds_pre); ds_pre_var = var(ds_pre);
-        %y = normpdf(ds);
-        % plot(ds,y)
-      % ds_pre_check = 1/sqrt(2*pi*ds_pre_var*ds_pre_var)*exp(-1.((ds-ds_pre_mean)/(2*ds_pre_var*ds_pre_var);
-        
+        ds_pre_mean = mean(ds_pre); ds_pre_var = var(ds_pre);
+    
         ds = ds_pre - min(ds_pre(:));
         ds = ds ./ max(ds(:)); 
 
-        gt_top = logical(isPos(iTest, ids));
+        gt_top = isPos(iTest, ids);
        
         thisRecall_ori= cumsum(logical(isPos(iTest, ids)) ) > 0; % yahan se get karta hai %db.cp (close position)
         ds_pre_gt = single(isPos(iTest, ids));
-%         if nnz(thisRecall_ori) == 0
-%             ds_pre_gt(iTestSample,1) = 0;
-%         else
-%             ds_pre_gt(iTestSample,1) = find(thisRecall_ori,1);
-% 
-%         end
+        
+        
+        
+        
         %% Leo START
                 
         qimg_path = strcat(dataset_path,'/',plen_opts.query_folder, '/', db.qImageFns{iTestSample, 1});  
         q_img = strcat(save_path,'/', db.qImageFns{iTestSample, 1});  
         q_feat = strrep(q_img,'.jpg','.mat');
-%         
-%         if show_output == 1
-%         subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
-%         db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(1,1),1});  
-% 
-%         subplot(2,2,2); imshow(imread(char(db_img))); %
-%         hold;
-%         end
-        
-        
-%         if ~exist(plen_opts.save_path_all, 'file')
-%                             %         
-%                             %         if exist(q_feat, 'file')
-%                             %              x_q_feat = load(q_feat);
-%                             %              
-%                             %         else
-%                             %             im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
-%                             % 
-%                             %             I = uint8(im{1,1});
-%                             %             [bbox, ~] =edgeBoxes(I,model);
-%                             %             
-%                             %            % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
-%                             %             
-%                             %             [hyt, wyd] = size(im{1,1});
+
             
             if exist(q_feat, 'file')
                  x_q_feat = load(q_feat);
@@ -161,14 +133,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
             end
 
             
-%         else
-%             %     load(plen_opts.save_path_all); above loading in
-%             %     mentioned
-% 
-%             x_q_feat = x_q_feat_all(iTestSample).x_q_feat;
-%         end
-%         
-        %%% Loading End
+
 %%        
         SLEN_top = zeros(total_top,2); 
        
@@ -407,22 +372,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
 
          ds_all = [];
         
-        
-        %  SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
-        
-%         Slot_group = 5;
-%         idss = ids;
-% 
-%         for i=1:total_top/Slot_group
-%             slot_Start = i*Slot_group-Slot_group;
-%             slot_till = i*Slot_group;
-%             [C c_i] = sortrows(ds_new_top(1+slot_Start:slot_till,1));
-%             for j=1:Slot_group
-%                 idss(j+slot_Start,1) = ids(c_i(j,1)+slot_Start);
-%             end
-% 
-% 
-%         end
+
         
         end
    
@@ -582,7 +532,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     res= mean(printRecalls);
     relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
    % save('pslen-tokyo2tokto-vt-7.mat','x_q_feat_all');
-    save('pslen-tokyo2tokto-GMM-87.mat','gmm_gt');
+   % save('pslen-tokyo2tokto-GMM-87.mat','gmm_gt');
 
     %ck = struct('data',{data});
 
