@@ -71,9 +71,9 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
     
   %  g_mdl =  load('/home/leo/mega/pslen/models/ensembleOfDecisionTreesModel-all.mat');
-    g_mdl =  load('/home/leo/mega/pslen/models/ensemblesModel-pslen-pitts2tokyo-data-512');
+   % g_mdl =  load('/home/leo/mega/pslen/models/ensemblesModel-pslen-pitts2tokyo-data-512');
+   g_mdl =  load('/home/leo/mega/pslen/models/pslen-v5-pitts2tokyo-data-512-mdls');
     
-
     
     num_box = 50; % Total = 10 (first one is the full images feature / box)
     
@@ -109,9 +109,9 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
         gt_top = isPos(iTest, ids);
        
         thisRecall_ori= cumsum(logical(isPos(iTest, ids)) ) > 0; % yahan se get karta hai %db.cp (close position)
-        ds_pre_gt = single(isPos(iTest, ids));
-        
-        
+        %ds_pre_gt = gt_top(isPos(iTest, ids));
+        gt_top_ids = int8(gt_top/10);
+        %gt_top_ids(gt_top_ids>10) = 0;
         
         
         %% Leo START
@@ -181,9 +181,9 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
            
            % excluding the top
            
-           ds_all = x_q_feat_ds_all;%(2:end,:);  
+           ds_all = x_q_feat_ds_all(2:end,:);  
            [ds_all_sort ds_all_sort_index] = sort(ds_all);
-           ds_all_sort_10 = ds_all_sort(2:Top_boxes+1,1:Top_boxes); 
+          
            
            %drawRectangle(image, Xmin, Ymin, width, height)
            %img = drawRectangle(I, bb(2), bb(1), bb(4), bb(3));
@@ -209,10 +209,10 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
             diff2_ds_all_less(diff2_ds_all_less>0) = 0;
         
             
-            ds_all_sub = ds_all(1:Top_boxes-1,1:Top_boxes-1);
+            ds_all_sub = ds_all(2:Top_boxes,:);
             
             
-            ds_all_less = ds_pre(100,1)-ds_all;
+            ds_all_less = x_q_feat_ds_all-max(ds_pre(:));
 
             s=sign(ds_all_less); 
             
@@ -220,9 +220,10 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
             inegatif=sum(s(:)==-1);
             inegatif_i=[inegatif_i ;inegatif];
 
-            S_less = s; S_less(S_less<0) = 0; 
-            S_less = abs(S_less).*ds_all_less; 
-            
+            S_less = s; S_less(S_less>0) = 0; 
+            S_less = abs(S_less).*x_q_feat_ds_all; 
+            S_less_Nr = normalize(S_less,'range');
+         
             
             D_diff = ds_pre(i,1); %-s_delta_all;
             
@@ -234,103 +235,107 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
       
             %exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
             exp_relative_diff = exp(-1.*ds_pre_diff(i,1)); %*exp_related_Box_dis;
-            
-           
-            [row,col,value] = find(ds_all_sort~=0);
                            
-            if show_output == 43
+           [row,col] = size(x_q_feat_ds_all);    
+            
+           box_var_db = [];
+            
+           for iii = 1: col
+                for jjj = 1:row 
 
-                q_imgg = imread(char(qimg_path));
-                db_imgg = imread(char(db_img));
+                    %Query -> Row and DB -> DB1 DB2 DB3 DB4 DB5 DB6 DB7
+                    %DB8
+                    %
 
-                qqq_img = q_imgg;
-                dbb_img = db_imgg;
+                    %related_Box_dis_top = x_q_feat_ds_all(1,col(jjj));
+
+
+                    related_Box_dis = x_q_feat_ds_all(jjj,iii);   % 51X51
+                  
+
+                    related_Box_db = iii;
+                    related_Box_q = jjj;
+                   % related_Box_q = ds_all_sort_index(row(jjj),col(jjj));
+
+
+                    bb_q = x_q_feat_box_q(related_Box_q,1:4);
+                    bb_db = x_q_feat_box_db(related_Box_db,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai                      
+
+                    q_size = x_q_feat_box_q(1,3)*(x_q_feat_box_q(1,4));  % wrong size, 3 se multiply howa howa hai
+                    db_size = x_q_feat_box_db(1,3)*(x_q_feat_box_db(1,4));
+
+                    q_width_height = (bb_q(1,3)*bb_q(1,4))/(q_size);
+                    db_width_height = (bb_db(1,3)*bb_db(1,4))/(db_size);
+
+                    exp_q_width_height = exp(-1.*(1-q_width_height));
+                    exp_db_width_height = exp(-1.*(1-db_width_height));
+
+
+                    sum_distance = ds_pre(1,1)+related_Box_dis;
+                    exp_sum_distance = exp(-1.*sum_distance); %*exp_related_Box_dis;
+
+                    ds_all_box(related_Box_q,related_Box_db) = 10*exp_relative_diff*exp_sum_distance*exp_q_width_height*exp_db_width_height;
+
+                end
+           end
+           
+            
+           %% TODO %%%% multiply with exp(-min(ds_all_sort_10(:));
+           
+         
+           ds_all_box_sorted = zeros(num_box,num_box);
+           S_less_Nr_sorted = zeros(num_box,num_box);
+          % [ds_all_sort ds_all_sort_index] = sort(ds_all_s_less);
+           %ds_all_sort_10 = ds_all_sort(2:Top_boxes+1,1:Top_boxes); 
+           for jj = 1: num_box
+               for ii = 1 : num_box
+                    ii_index = ds_all_sort_index(ii,jj);
+                    ds_all_box_sorted(ii,jj) = ds_all_box(ii_index+1,jj); %51*51
+                    S_less_Nr_sorted(ii,jj) = S_less_Nr(ii_index+1,jj);
+                    S_less_sorted(ii,jj) = S_less(ii_index+1,jj);
+               end
+           end
+           
+           ds_all_s_less = ds_all_box_sorted.*S_less_Nr_sorted; 
+           
+              
+            
+            S_less_diff = diff(S_less_sorted);
+                    
+
+            S1 = S_less_sorted; 
+            S1_mean = sum(S1(:))/nnz(S1);
+            S1(S1>S1_mean) = 0;
+            S2 = S1; 
+            S2_mean = sum(S2(:))/nnz(S2);
+            S2(S2>S2_mean) = 0;
+            S3 = S2; 
+            S3_mean = sum(S3(:))/nnz(S3);
+            S3(S3>S3_mean) = 0;
+            
+            
+            S1_logical = logical(S1);
+            ds_all_s_less_s1 = S1_logical.*ds_all_s_less;
+            ds_all_s_less_s1_sub = ds_all_s_less_s1(1:Top_boxes,1:Top_boxes);
+            min_ds_all = S_less_sorted(1:Top_boxes,1:Top_boxes);
+            if (nnz(min_ds_all) > 0)
+                min_ds_all = min(min_ds_all(min_ds_all > 0));
+            else
+                min_ds_all = 0;
             end
-            
-            
-            if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_q)
-
-                    box_var_db = [];
-                    box_var_q = [];
-                    AAsum =[];
-                    norms= [];
-                    Pslen_table = [];
-                    Pslen_table_neg = [];
-                    Pslen_table_43 = [];
-                    %subplot(2,3,1);clf
-                    %  subplot(2,3,2);clf
-                    for jjj=1:length(row) %Top_boxes
-
-                        %Query -> Row and DB -> DB1 DB2 DB3 DB4 DB5 DB6 DB7
-                        %DB8
-                        %
-
-                        %related_Box_dis_top = x_q_feat_ds_all(1,col(jjj));
-                        
-                       
-                        related_Box_dis = x_q_feat_ds_all(row(jjj),col(jjj));   
-                        exp_related_Box_dis = exp(-1.*related_Box_dis);%/ds_box_all_sum;
-
-                        related_Box_db = col(jjj);
-                        
-                        %related_Box_q = row(jjj);
-                        related_Box_q = ds_all_sort_index(row(jjj),col(jjj));
-
-                        
-                        bb_q = x_q_feat_box_q(related_Box_q,1:4);
-                        bb_db = x_q_feat_box_db(related_Box_db,1:4); % Fix sized, so es ko 50 waly ki zarorat nai hai                      
-
-                        q_size = x_q_feat_box_q(1,3)*(x_q_feat_box_q(1,4));  % wrong size, 3 se multiply howa howa hai
-                        db_size = x_q_feat_box_db(1,3)*(x_q_feat_box_db(1,4));
-
-                        q_width_height = (bb_q(1,3)*bb_q(1,4))/(q_size);
-                        db_width_height = (bb_db(1,3)*bb_db(1,4))/(db_size);
-
-                        exp_q_width_height = exp(-1.*(q_width_height));
-                        exp_db_width_height = exp(-1.*(db_width_height));
-
-                        
-                        sum_distance = ds_pre(1,1)+related_Box_dis-min(ds_all_sort_10(:));
-                        exp_sum_distance = exp(-1.*sum_distance); %*exp_related_Box_dis;
-
-                        ds_all(related_Box_q,related_Box_db) = exp_relative_diff*exp_sum_distance*exp_q_width_height*exp_db_width_height;
- 
-                    end
-            end
-           
-           
-           [ds_all_sort ds_all_sort_index] = sort(ds_all,'descend');
-           %ds_all_sort_10 = ds_all_sort(2:Top_boxes,1:Top_boxes-1);
-           ds_all_sort_10 = ds_all_sort;
-           
-           
-            
-            S_less_diff = diff(S_less);
-            
-            sol_1 = sum(S_less_diff(:));
-
-            S1 = S_less; S1_mean = mean(S1(:),'omitnan');
-            S1(S1>S1_mean) = NaN;
-            S2 = S1; S2_mean = mean(S2(:),'omitnan');
-            S2(S2>S2_mean) = NaN;
-            S3 = S2; S3_mean = mean(S3(:),'omitnan');
-
-            S3(S3>S3_mean) = NaN;
-            S1(isnan(S1)) = 0;
-            S2(isnan(S2)) = 0;
-            S3(isnan(S3)) = 0;
-            
-            D3 = sum(S3(:));
-            
             prob_ds_pre_sum = exp_ds_pre(i,1)/exp_ds_pre_sum;
-            Pslen_mat = prob_ds_pre_sum*ds_all_sort(2:Top_boxes+1,1:Top_boxes);
+            prob_ds_pre_sum = exp(-1*min_ds_all)*prob_ds_pre_sum;
 
-           % prob_ds_All = sum(sum(ds_all(2:Top_boxes+1,1:Top_boxes)));
-            prob_ds_All = sum(Pslen_mat(:));
+            Pslen_mat = prob_ds_pre_sum*ds_all_s_less_s1_sub;
+            
+            
+            % prob_ds_All = sum(sum(ds_all(2:Top_boxes+1,1:Top_boxes)));
+          %  prob_ds_All = sum(Pslen_mat(:));
            % ds_all input
            
            mean_min_top = exp(-1.*mean(x_q_feat_ds_all(1,1:10))); 
-               
+           
+           
          
          
            
@@ -348,7 +353,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
          crf_h = x_q_feat_ds_all(1,1:10);%double(pslen_ds_all(1,:));
          crf_X = Pslen_mat;%double(pslen_ds_all(2:11,:));
          crf_pre = ds_pre(i,1);
-         crf_y = int8(gt_top(i,1))+1;
+         crf_y = int8(logical(gt_top_ids(i,1)))+1;
         
          
          crf_data = struct ('Y', crf_y,'H', crf_h,'X', crf_X, 'pre', crf_pre); 
@@ -360,11 +365,13 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
          pslen_pridict = [crf_pre crf_h XX];
 
         
-         D_diff_predict = predict(g_mdl.mdls{5},pslen_pridict);
-         
+         %D_diff_predict = predict(g_mdl.mdls{2},pslen_pridict);
+         D_diff_predict = predict(g_mdl.mdls{2},pslen_pridict);
+         %D_diff_predict = 1;
          %D_diff = D_diff+(prob_ds_All-mean_min_top)+D_diff_predict;%-mean(ds_pre_diff);
+        % if D_diff_predict~=2
          D_diff = D_diff/D_diff_predict;%+prob_ds_All-mean_min_top;
-         
+        % end
          ds_new_top(i,1) = abs(D_diff);
          %ds_new_top(i,1) = D_diff_predict;
          
@@ -536,7 +543,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
 
     %ck = struct('data',{data});
 
-    save('pslen-tokyo2tokto-data.mat','data');
+    save('pslen-v5-pitts2tokyo-data-512.mat','data');
     
     
     relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');
