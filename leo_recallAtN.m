@@ -72,7 +72,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     
   %  g_mdl =  load('/home/leo/mega/pslen/models/ensembleOfDecisionTreesModel-all.mat');
    % g_mdl =  load('/home/leo/mega/pslen/models/ensemblesModel-pslen-pitts2tokyo-data-512');
-   g_mdl =  load('/home/leo/mega/pslen/models/pslen-v5-pitts2tokyo-data-512-mdls');
+   g_mdl =  load('/home/leo/mega/pslen/models/pslen-v7-tokyo2tokyo-data-512-mdls');
     
     
     num_box = 50; % Total = 10 (first one is the full images feature / box)
@@ -316,7 +316,8 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
             
             S1_logical = logical(S1);
             ds_all_s_less_s1 = S1_logical.*ds_all_s_less;
-            ds_all_s_less_s1_sub = ds_all_s_less_s1(1:Top_boxes,1:Top_boxes);
+            ds_all_s_less_s1_sub = ds_all_s_less(1:Top_boxes,1:Top_boxes);
+            
             min_ds_all = S_less_sorted(1:Top_boxes,1:Top_boxes);
             if (nnz(min_ds_all) > 0)
                 min_ds_all = min(min_ds_all(min_ds_all > 0));
@@ -365,8 +366,8 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
          pslen_pridict = [crf_pre crf_h XX];
 
         
-         %D_diff_predict = predict(g_mdl.mdls{2},pslen_pridict);
          D_diff_predict = predict(g_mdl.mdls{2},pslen_pridict);
+        % D_diff_predict = predict(g_mdl{5}.mdls,pslen_pridict);
          %D_diff_predict = 1;
          %D_diff = D_diff+(prob_ds_All-mean_min_top)+D_diff_predict;%-mean(ds_pre_diff);
         % if D_diff_predict~=2
@@ -543,7 +544,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
 
     %ck = struct('data',{data});
 
-    save('pslen-v5-pitts2tokyo-data-512.mat','data');
+    save('pslen-v5-tokyo2tokyo-data-4096.mat','data');
     
     
     relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');

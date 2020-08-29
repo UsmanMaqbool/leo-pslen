@@ -1,7 +1,7 @@
 
 close all; clear all;
 clc;
-load('pslen-v5-pitts2tokyo-data-512.mat');
+load('pslen-v6-pitts2tokyo-data-4096');
 
 aa = data(1).H;
 HH = [];
@@ -13,10 +13,8 @@ for i = 1:size(data,2)
 
 end
 Data = array2table(HH);
-hypopts = struct('ShowPlots',false,'Verbose',0,'UseParallel',true);
+hypopts = struct('ShowPlots',false,'Verbose',0,'UseParallel',false);
 poolobj = gcp;
-
-
 
 % Decision tree
 %mdls{1} = fitctree(Data,'HH112', 'OptimizeHyperparameters','auto');
@@ -28,9 +26,9 @@ mdls{2} = fitrensemble(Data,'HH112');
 
 % Naive Bayes
 
-%mdls{1} = fitcnb(Data,'HH112', ...
-%    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+mdls{3} = fitcnb(Data,'HH112', ...
+    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
 
 
-save('pslen-v5-tokyo2tokyo-data-512-mdls.mat','mdls');
+save('pslen-v6-pitts2tokyo-data-4096-mdls.mat','mdls');
 fprintf( 'Done :)')
