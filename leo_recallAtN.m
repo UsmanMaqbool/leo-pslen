@@ -105,10 +105,25 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     
         ds = ds_pre - min(ds_pre(:));
         ds = ds ./ max(ds(:)); 
+        
+        % if oxford or otherplace datasets, we can get the recall like this
+        try
+           gt_top = isPos(iTest, ids);
+        catch 
+            isIgnore= ismember(ids, db.ignoreIDs{iTestSample});
+            ids= ids(~isIgnore);
+          %  ids(isIgnore)=0;
+            isPos= ismember(ids', db.posIDs{iTestSample});
+           % prec= cumsum(isPos)./[1:length(ids)];
+           % recall= cumsum(isPos)/length(db.posIDs{iTestSample});
+            gt_top = isPos';
+        end 
 
-        gt_top = isPos(iTest, ids);
        
-        thisRecall_ori= cumsum(logical(isPos(iTest, ids)) ) > 0; % yahan se get karta hai %db.cp (close position)
+        
+        
+       
+      %  thisRecall_ori= cumsum(logical(isPos(iTest, ids)) ) > 0; % yahan se get karta hai %db.cp (close position)
         %ds_pre_gt = gt_top(isPos(iTest, ids));
         gt_top_ids = int8(gt_top/10);
         %gt_top_ids(gt_top_ids>10) = 0;
@@ -544,7 +559,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
 
     %ck = struct('data',{data});
 
-    save('pslen-v5-tokyo2tokyo-data-4096.mat','data');
+    save('pslen-v8-pitts2oxford-data-512.mat','data');
     
     
     relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');
