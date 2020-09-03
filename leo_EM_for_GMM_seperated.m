@@ -1,8 +1,7 @@
 
 close all; clear all;
 clc;
-load('pslen-v6-pitts2tokyo-data-4096');
-
+load('pslen-v11-tokyo2oxford-data-512.mat','data');
 aa = data(1).H;
 HH = [];
 YY = [];
@@ -30,5 +29,5 @@ mdls{3} = fitcnb(Data,'HH112', ...
     'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
 
 
-save('pslen-v6-pitts2tokyo-data-4096-mdls.mat','mdls');
+save('pslen-v11-tokyo2oxford-data-512-mdls.mat','mdls');
 fprintf( 'Done :)')

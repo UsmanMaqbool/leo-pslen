@@ -7,9 +7,9 @@ setup;
 
 %%
 iTestSample_Start= 1; startfrom = 1;  show_output = 0;
-f_dimension = 512;
+f_dimension = 4096
 job_net = 'vd16_pitts30k'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
-job_datasets = 'oxford';  %'tokyo247' 'pitts30k'
+job_datasets = 'oxford';  %'tokyo247' 'pitts30k' 'oxford'
 
 %%
 if strcmp(job_net,'vd16_pitts30k')
@@ -105,11 +105,11 @@ dbFeatFn= sprintf('%s%s_%s_db.bin', paths.outPrefix, netID, dbTest.name);  % jus
 qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % just to create the files in the out folder
 
 % To create new output bin files on the datasets
-% % for query
-%serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
-% % for database images
-%serialAllFeats(net, dbTest.dbPath, dbTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
-
+% % % % for query
+serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
+% % % % for database images
+serialAllFeats(net, dbTest.dbPath, dbTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
+%  
 
 [~, ~,recall,recall_ori, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn, plen_opts, [], 'cropToDim', f_dimension);
 

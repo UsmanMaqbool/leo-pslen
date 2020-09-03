@@ -28,7 +28,7 @@ function paths= localPaths()
     %paths.dsetRootTokyo247= '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/'; % should contain images/ and query/
     %paths.dsetRootTokyoTM= '/home/leo/docker_ws/datasets/tokyoTimeMachine/'; % should contain images/
     paths.dsetRootTokyoTM= '/home/leo/docker_ws/datasets/tinyTimeMachine/'; % should contain images/
-%   paths.dsetRootOxford= '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/OxfordBuildings/'; % should contain images/ and groundtruth/, and be writable
+    paths.dsetRootOxford= 'datasets/test_oxford/'; % should contain images/ and groundtruth/, and be writable
 
     % models used in our paper, download them from our research page
     % paths.ourCNNs= '~/Data/models/';
