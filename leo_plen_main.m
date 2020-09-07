@@ -6,16 +6,17 @@ setup;
 
 
 %%
-iTestSample_Start= 1; startfrom = 1;  show_output = 0;
-f_dimension = 4096
+iTestSample_Start= 1; startfrom = 1;  show_output = 0; 
+mode = 'test' ; %'training' , 'test'
+proj = 'vt-rgb';
+f_dimension = 4096;
 job_net = 'vd16_pitts30k'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
-job_datasets = 'oxford';  %'tokyo247' 'pitts30k' 'oxford'
+job_datasets = 'pitts30k-vt-rgb';  %'tokyo247' 'pitts30k' 'oxford' , 'paris', 'paris-vt-rgb', 'pitts30k-vt-rgb
 
 %%
 if strcmp(job_net,'vd16_pitts30k')
     % PITTSBURGH DATASET
     netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
-    query_folder = 'query';
 
 
 elseif strcmp(job_net,'vd16_tokyoTM')
@@ -28,7 +29,13 @@ end
 if strcmp(job_datasets,'pitts30k')
     dbTest= dbPitts('30k','test');
     datasets_path = 'datasets/Test_Pitts30k';
-    
+        query_folder = 'query';
+
+elseif strcmp(job_datasets,'pitts30k-vt-rgb')
+    dbTest= dbPitts('30k','test');
+    datasets_path = '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/view-tags/Pittsburgh_Viewtag_3_rgb'; %% PC
+         query_folder = 'queries';
+
 elseif strcmp(job_datasets,'tokyo247')
     dbTest= dbTokyo247();
     datasets_path = 'datasets/Test_247_Tokyo_GSV'; %% PC
@@ -37,11 +44,18 @@ elseif strcmp(job_datasets,'oxford')
     dbTest= dbVGG('ox5k');
     datasets_path = 'datasets/test_oxford'; %% PC
     query_folder = 'images';
-
+elseif strcmp(job_datasets,'paris')
+    dbTest= dbVGG('paris');
+    datasets_path = 'datasets/test_paris'; %% PC
+    query_folder = 'images';
+elseif strcmp(job_datasets,'paris-vt-rgb')
+    dbTest= dbVGG('paris');
+    datasets_path = 'datasets/test_paris-vt/3_rbg'; %% PC
+    query_folder = 'images';
 end
 
 %save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_box_51_plus');
-save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_box_52-correlation');
+save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_',int2str(f_dimension),'_',proj,'_pslen-0.3');
 
 save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results_',int2str(f_dimension),'.mat');
 save_path_all = strcat('/home/leo/mega/pslen/all/',job_net,'_to_',job_datasets,'_box_50_plus','.mat');
@@ -101,16 +115,17 @@ net= relja_simplenn_tidy(net); % potentially upgrate the network to the latest v
 
 %%
 
-dbFeatFn= sprintf('%s%s_%s_db.bin', paths.outPrefix, netID, dbTest.name);  % just to create the files in the out folder
-qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % just to create the files in the out folder
+dbFeatFn= sprintf('%s%s_%s_%s_db.bin', paths.outPrefix, netID, dbTest.name, proj)  % just to create the files in the out folder
+qFeatFn = sprintf('%s%s_%s_%s_q.bin', paths.outPrefix, netID, dbTest.name,proj)   % just to create the files in the out folder
 
 % To create new output bin files on the datasets
-% % % % for query
+% % % % % for query
+if strcmp(mode,'training')
 serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
-% % % % for database images
+% % % % % % for database images
 serialAllFeats(net, dbTest.dbPath, dbTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
-%  
-
+% % %  
+end
 [~, ~,recall,recall_ori, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn, plen_opts, [], 'cropToDim', f_dimension);
 
 recallNs = opts.recallNs;

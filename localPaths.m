@@ -20,7 +20,10 @@ function paths= localPaths()
     %paths.dsetSpecDir= '/home/leo/docker_ws/datasets/datasets-specs';
 
     % --- dataset locations
-    paths.dsetRootPitts= '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/'; % should contain images/ and queries/
+   % paths.dsetRootPitts= '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/'; % should contain images/ and queries/
+    
+    paths.dsetRootPitts= '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/view-tags/Pittsburgh_Viewtag_3_rgb/';
+    
     % CLuster
     %paths.dsetRootTokyo247= '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/'; % should contain images/ and query/
     % XPS
@@ -30,6 +33,10 @@ function paths= localPaths()
     paths.dsetRootTokyoTM= '/home/leo/docker_ws/datasets/tinyTimeMachine/'; % should contain images/
     paths.dsetRootOxford= 'datasets/test_oxford/'; % should contain images/ and groundtruth/, and be writable
 
+    paths.dsetRootParis= '/mnt/0287D1936157598A/docker_ws/docker_ws/Maqbool/datasets/test_paris/'; % should contain images/ (with subfolders defense, eiffel, etc), groundtruth/ and corrupt.txt, and be writable
+    paths.dsetRootHolidays= '/mnt/0287D1936157598A/docker_ws/docker_ws/Maqbool/datasets/test-inria/'; % should contain jpg/ for the original holidays, or jpg_rotated/ for rotated Holidays, and be writable
+    
+    
     % models used in our paper, download them from our research page
     % paths.ourCNNs= '~/Data/models/';
    % paths.ourCNNs= '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/models_v103_pre-trained/';
