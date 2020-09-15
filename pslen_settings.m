@@ -5,11 +5,13 @@ function plen_opts= pslen_settings(paths)
     pslen_mode = 'training' ; %'training' , 'test'
     proj = 'pslen'; %'vt-rgb'
     f_dimension = 512;% '512' or '4096'
-    job_net = 'vd16_tokyoTM'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
+    pre_net = 'vd16';% 'vd16', 'caffe'
+    net_dataset = 'tokyoTM'; %tokyoTM', 'pitts30k' 
+    job_net = strcat(pre_net,'_',net_dataset); 
     job_datasets = 'tokyo247';  %'tokyo247' 'pitts30k' 'oxford' , 'paris', 'paris-vt-rgb', 'pitts30k-vt-rgb
     pslen_on = 'paris'; % PSLEN model using Paris dataset.
     
-    pslen_directory = '/home/leo/mega/pslen/';
+    pslen_directory = '/home/leo/mega/pslen-1/';
     %%
     
     
@@ -21,7 +23,6 @@ function plen_opts= pslen_settings(paths)
     elseif strcmp(job_net,'vd16_tokyoTM')
         % TOKYO DATASET
         netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
-
     end
 
     if strcmp(job_datasets,'pitts30k')
@@ -32,7 +33,7 @@ function plen_opts= pslen_settings(paths)
     elseif strcmp(job_datasets,'pitts30k-vt-rgb')
         dbTest= dbPitts('30k','test');
         datasets_path = '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/view-tags/Pittsburgh_Viewtag_3_rgb'; %% PC
-             query_folder = 'queries';
+        query_folder = 'queries';
 
     elseif strcmp(job_datasets,'tokyo247')
         dbTest= dbTokyo247();
@@ -55,10 +56,10 @@ function plen_opts= pslen_settings(paths)
         query_folder = 'images';
     end
 
-    save_path = strcat(pslen_directory,job_net,'_to_',job_datasets,'_',int2str(f_dimension),'_',proj,'-0.3');
+    save_path = [];
 
     save_pslen_data = strcat(pslen_directory,job_net,'_to_',pslen_on,'_vd16_data_',int2str(f_dimension),'.mat');
-    save_pslen_data_mdl = strcat(pslen_directory,job_net,'_to_',pslen_on,'_vd16_pslen_',int2str(f_dimension),'_mdls.mat');
+    save_pslen_data_mdl = strcat(pslen_directory,'models/', job_net,'_to_',pslen_on,'_vd16_pslen_',int2str(f_dimension),'_mdls.mat');
 
     save_path_all = strcat(pslen_directory,job_net,'_to_',job_datasets,'_box_50_plus','.mat');
         
@@ -98,8 +99,11 @@ function plen_opts= pslen_settings(paths)
 
     %%
     plen_opts = struct(...
+                'pslen_directory',      pslen_directory, ...
                 'netID',                netID, ...
-                'dataset_path',         datasets_path, ...
+                'proj',                 proj, ...
+                'job_net',              job_net, ...
+                'datasets_path',        datasets_path, ...
                 'save_path',            save_path, ...
                 'save_path_all',        save_path_all, ...
                 'save_pslen_data',      save_pslen_data, ...

@@ -22,7 +22,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
     iTestSample_Start=pslen_config.iTestSample_Start; 
     startfrom =pslen_config.startfrom; 
     show_output = pslen_config.show_output;  %test the boxes
-    dataset_path = pslen_config.dataset_path; 
+    dataset_path = pslen_config.datasets_path; 
     save_path = pslen_config.save_path; 
     
     
@@ -67,6 +67,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
         
         % if oxford or otherplace datasets, we can get the recall like this
         if(pslen_config.createPslenModel)
+            save_path = strcat(pslen_config.pslen_directory,pslen_config.job_net,'_to_',pslen_config.pslen_on,'_',int2str(pslen_config.cropToDim),'_',pslen_config.proj);
             isIgnore= ismember(ids, db.ignoreIDs{iTestSample});
             ids= ids(~isIgnore);
             % making 100 total
@@ -101,8 +102,10 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
                  x_q_feat = load(q_feat);
                  x_q_feat_all(iTestSample) = struct ('x_q_feat', x_q_feat); 
             else
-
-                 q_feat = leo_estimate_box_features(qimg_path,model,db,q_feat,net,num_box,total_top,dataset_path,ids,iTestSample);
+                
+                
+                
+                q_feat = leo_estimate_box_features(qimg_path,model,db,q_feat,net,num_box,total_top,dataset_path,ids,iTestSample);
                  x_q_feat = load(q_feat);
 
 

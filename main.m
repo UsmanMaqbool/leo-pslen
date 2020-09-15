@@ -13,13 +13,11 @@ load( sprintf('%s%s.mat', paths.ourCNNs, netID), 'net' );
 
 %% Check PSLEN model available
 
-if ~exist(pslen_config.save_pslen_data_mdl, 'file')
+if ~exist(pslen_config.save_pslen_data_mdl, 'file') && strcmp(pslen_config.pslen_on,'paris')
     pslen_config.createPslenModel = true;
-    if strcmp(pslen_config.pslen_on,'paris')
-        dbTest= dbVGG('paris');
-        pslen_config.query_folder = 'images';    
-
-    end
+    dbTest= dbVGG('paris');
+    pslen_config.datasets_path = paths.dsetRootParis; %% PC
+    pslen_config.query_folder = 'images';    
     
     qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);   % just to create the files in the out folder
     dbFeatFn = sprintf('%s%s_%s_db.bin', paths.outPrefix, netID, dbTest.name);  % just to create the files in the out folder
