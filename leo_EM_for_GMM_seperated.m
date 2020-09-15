@@ -1,7 +1,7 @@
 
 close all; clear all;
 clc;
-load('pslen-v12-vd16_tokyoTM2paris-data-4096.mat','data');
+load('pslen-v12-vd16_pitts2paris-data-512.mat','data');
 aa = data(1).H;
 HH = [];
 YY = [];
@@ -25,9 +25,9 @@ mdls{2} = fitrensemble(Data,'HH112');
 
 % Naive Bayes
 
-mdls{3} = fitcnb(Data,'HH112', ...
-    'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+% mdls{3} = fitcnb(Data,'HH112', ...
+%     'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
 
 
-save('pslen-v12-vd16_tokyoTM2paris-data-4096-mdls.mat','mdls');
+save('pslen-v12-vd16_pitts2paris-data-512-mdls.mat','mdls');
 fprintf( 'Done :)')

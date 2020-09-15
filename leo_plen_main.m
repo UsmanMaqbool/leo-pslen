@@ -5,18 +5,19 @@ addpath(genpath(pwd));
 setup; 
 
 
-%%
-iTestSample_Start= 1; startfrom = 1;  show_output = 0; 
+%%1720
+iTestSample_Start= 1720; startfrom = 1;  show_output = 0; 
 mode = 'test' ; %'training' , 'test'
-proj = 'vt-rgb';
-f_dimension = 4096;
+proj = 'pslen'; %'vt-rgb', 'pslen'
+f_dimension = 512;
 job_net = 'vd16_pitts30k'; % 'vd16_tokyoTM';   % 'vd16_pitts30k' 
-job_datasets = 'pitts30k-vt-rgb';  %'tokyo247' 'pitts30k' 'oxford' , 'paris', 'paris-vt-rgb', 'pitts30k-vt-rgb
+job_datasets = 'pitts30k';  %'tokyo247' 'pitts30k' 'oxford' , 'paris', 'paris-vt-rgb', 'pitts30k-vt-rgb
 
 %%
 if strcmp(job_net,'vd16_pitts30k')
     % PITTSBURGH DATASET
     netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
+            %query_folder = 'query';
 
 
 elseif strcmp(job_net,'vd16_tokyoTM')
@@ -29,7 +30,7 @@ end
 if strcmp(job_datasets,'pitts30k')
     dbTest= dbPitts('30k','test');
     datasets_path = 'datasets/Test_Pitts30k';
-        query_folder = 'query';
+        query_folder = 'queries';
 
 elseif strcmp(job_datasets,'pitts30k-vt-rgb')
     dbTest= dbPitts('30k','test');
@@ -55,7 +56,7 @@ elseif strcmp(job_datasets,'paris-vt-rgb')
 end
 
 %save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_box_51_plus');
-save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_',int2str(f_dimension),'_',proj,'_pslen-0.3');
+save_path = strcat('/home/leo/mega/pslen/',job_net,'_to_',job_datasets,'_',int2str(f_dimension),'_',proj,'-0.3');
 
 save_results = strcat('plots/',job_net,'_to_',job_datasets,'_pslen_netvlad_results_',int2str(f_dimension),'.mat');
 save_path_all = strcat('/home/leo/mega/pslen/all/',job_net,'_to_',job_datasets,'_box_50_plus','.mat');
@@ -115,8 +116,8 @@ net= relja_simplenn_tidy(net); % potentially upgrate the network to the latest v
 
 %%
 
-dbFeatFn= sprintf('%s%s_%s_%s_db.bin', paths.outPrefix, netID, dbTest.name, proj)  % just to create the files in the out folder
-qFeatFn = sprintf('%s%s_%s_%s_q.bin', paths.outPrefix, netID, dbTest.name,proj)   % just to create the files in the out folder
+dbFeatFn= sprintf('%s%s_%s_db.bin', paths.outPrefix, netID, dbTest.name)  % just to create the files in the out folder
+qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name)   % just to create the files in the out folder
 
 % To create new output bin files on the datasets
 % % % % % for query

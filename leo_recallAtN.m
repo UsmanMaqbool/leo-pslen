@@ -70,9 +70,11 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
     
-    g_mdl =  load('/home/leo/mega/pslen/models/pslen-v12-pitts2paris-data-4096-mdls.mat');
-    %   g_mdl =  load('/home/leo/mega/pslen/models/pslen-v12-vd16_tokyoTM2paris-data-4096-mdls.mat');
+    
+    g_mdl =  load('/home/leo/mega/pslen/models/pslen-v12-vd16_pitts2paris-data-512-mdls.mat');
 
+   % g_mdl =  load('/home/leo/mega/pslen/models/pslen-v12-pitts2paris-data-4096-mdls.mat');
+    %   g_mdl =  load('/home/leo/mega/pslen/models/pslen-v12-vd16_tokyoTM2paris-data-4096-mdls.mat');
     num_box = 50; % Total = 10 (first one is the full images feature / box)
     
     
@@ -374,8 +376,8 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
          crf_h = x_q_feat_ds_all(1,1:10);%double(pslen_ds_all(1,:));
          crf_X = Pslen_mat;%double(pslen_ds_all(2:11,:));
          crf_pre = ds_pre(i,1);
-         crf_y = int8(logical(gt_top_ids(i,1)))+1;
-         %crf_y = int8(gt_top(i,1))+1; %% for getting the oxford
+        % crf_y = int8(logical(gt_top_ids(i,1)))+1;
+        % crf_y = int8(gt_top(i,1))+1; %% for getting the oxford
          
          crf_data = struct ('Y', crf_y,'H', crf_h,'X', crf_X, 'pre', crf_pre); 
          data(:,i+((iTestSample-1)*100)) = crf_data;
@@ -386,14 +388,14 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
          pslen_pridict = [crf_pre crf_h XX];
 
         
-         D_diff_predict = predict(g_mdl.mdls{2},pslen_pridict);
+         D_diff_predict = predict(g_mdl.mdls{1},pslen_pridict);
         % D_diff_predict = predict(g_mdl{5}.mdls,pslen_pridict);
          %D_diff_predict = 1;
          %D_diff = D_diff+(prob_ds_All-mean_min_top)+D_diff_predict;%-mean(ds_pre_diff);
         % if D_diff_predict~=2
          
       %  D_diff = D_diff/D_diff_predict;%+prob_ds_All-mean_min_top;
-         D_diff = D_diff+exp(-1.*D_diff_predict);
+         D_diff = D_diff+(2*exp(-1.*D_diff_predict));
         
         % end
          ds_new_top(i,1) = abs(D_diff);
@@ -414,11 +416,11 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
 
         idss = ids;
         inegatifss = inegatif_i;
-        for i=1:total_top
-            idss(i,1) = ids(c_i(i,1));
-            inegatifss(i,1) = inegatif_i(c_i(i,1));
-
-        end
+%         for i=1:total_top
+%             idss(i,1) = ids(c_i(i,1));
+%             inegatifss(i,1) = inegatif_i(c_i(i,1));
+% 
+%         end
          if show_output == 3
 
                 subplot(2,6,1); imshow(imread(char(qimg_path))); %q_img
@@ -515,22 +517,22 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
         numReturned= length(ids);
         assert(numReturned<=nTop); % if your searcher returns fewer, it's your fault
         
-       thisRecall= cumsum( isPos(iTest, idss) ) > 0; % yahan se get karta hai %db.cp (close position)
-       recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
-        
-       thisRecall1= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
-       recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
-       printRecalls(iTestSample)= thisRecall(printN);
-        
-       thisRecall_idx = find(thisRecall~=0, 1, 'first');
-       thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
-       fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
-       if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
-         if  ((thisRecall_idx-thisRecall1_idx) > 0 && thisRecall1_idx < 4) 
-              fprintf('iTestSample: %i \n',iTestSample);
-    
-         end
-       end
+%        thisRecall= cumsum( isPos(iTest, idss) ) > 0; % yahan se get karta hai %db.cp (close position)
+%        recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
+%         
+%        thisRecall1= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
+%        recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
+%        printRecalls(iTestSample)= thisRecall(printN);
+%         
+%        thisRecall_idx = find(thisRecall~=0, 1, 'first');
+%        thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
+%        fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
+%        if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
+%          if  ((thisRecall_idx-thisRecall1_idx) > 0 && thisRecall1_idx < 4) 
+%               fprintf('iTestSample: %i \n',iTestSample);
+%     
+%          end
+%        end
         if show_output == 45
                fprintf('iTestSample: %i \n',iTestSample);
                figure;
@@ -559,7 +561,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
        
     end  
     t= toc(evalProg);
-    save('pslen-v12-vd16_tokyoTM2paris-data-4096.mat','data');
+    save('pslen-v12-vd16_pitts2paris-data-512.mat','data');
 
     res= mean(printRecalls);
     relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
