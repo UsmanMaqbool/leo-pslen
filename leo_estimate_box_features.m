@@ -3,7 +3,8 @@ function q_feat = leo_estimate_box_features(qimg_path, model, db,q_feat,net,num_
 im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
 I = uint8(im{1,1});
-[bbox_all, ~] =edgeBoxes(I,model);
+%[bbox_all, ~] =edgeBoxes(I,model);
+bbox_all =edgeBoxes(I,model);
 % [bbox,im, E, hyt, wyd] = img_Bbox(qimg_path,model);
 [hyt, wyd, ~] = size(im{1,1});
 
@@ -27,10 +28,10 @@ for jj = 1:size(ids,1)
         ds_all_full = [];
 %         ids_all = [];
 
-        db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1})  
+        db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1})  ;
         im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
         I = uint8(im{1,1});
-        [bbox_all, ~] =edgeBoxes(I,model); % ~ -> Edge (not required)
+        bbox_all =edgeBoxes(I,model); % ~ -> Edge (not required)
         [hyt, wyd, ~] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
 
         mat_boxes = leo_slen_increase_boxes(bbox_all,hyt,wyd);

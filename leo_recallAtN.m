@@ -1,4 +1,4 @@
-function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,plen_opts)
+function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,pslen_config)
     if nargin<6, nSample= inf; end
     
     rngState= rng;
@@ -18,22 +18,29 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     printRecalls= zeros(length(toTest),1);
     
     evalProg= tic;
-    %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-    %save_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt-2';
-   
-    % detect blackish images  ( plot the boxes)
-    % rearrange + use previous knowledge
-    
+  
 
     
-    vt_type = plen_opts.vt_type;
-    iTestSample_Start=plen_opts.iTestSample_Start; startfrom =plen_opts.startfrom; show_output = plen_opts.show_output;  %test the boxes
-    dataset_path = plen_opts.dataset_path; 
-    save_path = plen_opts.save_path; 
-    %% LEO START
+    iTestSample_Start=pslen_config.iTestSample_Start; startfrom =pslen_config.startfrom; show_output = pslen_config.show_output;  %test the boxes
+    dataset_path = pslen_config.dataset_path; 
+    save_path = pslen_config.save_path; 
     
-    netID= plen_opts.netID;
-    % netID= 'caffe_tokyoTM_conv5_vlad_preL2_intra_white';
+    
+    
+    %% PSLEN
+
+    
+    if exist(pslen_config.save_pslen_data_mdl, 'file')
+        
+        
+        g_mdl =  load(pslen_config.save_pslen_data_mdl');
+    else
+        
+        % create file Check if not exists
+
+    end
+    netID= pslen_config.netID;
+    % netI D= 'caffe_tokyoTM_conv5_vlad_preL2_intra_white';
 
 
     paths = localPaths();
@@ -43,9 +50,9 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     %%
     net= relja_simplenn_tidy(net); % potentially upgrate the network to the latest version of NetVLAD / MatConvNet
 
-    if isfile(plen_opts.save_path_all)
+    if isfile(pslen_config.save_path_all)
      
-        load(plen_opts.save_path_all);
+        load(pslen_config.save_path_all);
     else
         fprintf('pslen-all single file not exits, system will process single images and make pslen-all in the end \n');
 
@@ -70,10 +77,8 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
     
-  %  g_mdl =  load('/home/leo/mega/pslen/models/ensembleOfDecisionTreesModel-all.mat');
-   % g_mdl =  load('/home/leo/mega/pslen/models/ensemblesModel-pslen-pitts2tokyo-data-512');
-  % g_mdl =  load('/home/leo/mega/pslen/models/pslen-v11-pitts2oxford-data-512-mdls.mat');
-     g_mdl =  load('/home/leo/mega/pslen/models/pslen-v11-tokyo2oxford-data-512-mdls.mat');
+
+
     
     num_box = 50; % Total = 10 (first one is the full images feature / box)
     
@@ -137,7 +142,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
         
         %% Leo START
                 
-        qimg_path = strcat(dataset_path,'/',plen_opts.query_folder, '/', db.qImageFns{iTestSample, 1});  
+        qimg_path = strcat(dataset_path,'/',pslen_config.query_folder, '/', db.qImageFns{iTestSample, 1});  
         q_img = strcat(save_path,'/', db.qImageFns{iTestSample, 1});  
         q_feat = strrep(q_img,'.jpg','.mat');
 
@@ -377,7 +382,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
          crf_X = Pslen_mat;%double(pslen_ds_all(2:11,:));
          crf_pre = ds_pre(i,1);
          crf_y = int8(logical(gt_top_ids(i,1)))+1;
-         %crf_y = int8(gt_top(i,1))+1; %% for getting the oxford
+        % crf_y = int8(gt_top(i,1))+1; %% for getting the oxford
          
          crf_data = struct ('Y', crf_y,'H', crf_h,'X', crf_X, 'pre', crf_pre); 
          data(:,i+((iTestSample-1)*100)) = crf_data;
@@ -388,16 +393,20 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
          pslen_pridict = [crf_pre crf_h XX];
 
         
-         D_diff_predict = predict(g_mdl.mdls{1},pslen_pridict);
+         D_diff_predict = predict(g_mdl.mdls{2},pslen_pridict);
         % D_diff_predict = predict(g_mdl{5}.mdls,pslen_pridict);
          %D_diff_predict = 1;
          %D_diff = D_diff+(prob_ds_All-mean_min_top)+D_diff_predict;%-mean(ds_pre_diff);
-        % if D_diff_predict~=2
-         D_diff = D_diff/D_diff_predict;%+prob_ds_All-mean_min_top;
+         %if D_diff_predict==2
+      %   D_diff = D_diff+D_diff_predict;%+prob_ds_All-mean_min_top;
+         % D_diff = D_diff/(0.5*exp(-1.*D_diff_predict));%-mean_min_top;
         % end
+        
+        % D_diff = D_diff/D_diff_predict;
+       %  ds_new_top(i,1) = abs(D_diff);
+        D_diff = D_diff+exp(-1.*D_diff_predict); 
+      %  ds_new_top(i,1) = D_diff;
          ds_new_top(i,1) = abs(D_diff);
-         %ds_new_top(i,1) = D_diff_predict;
-         
          Pslen_table = [];
 
          ds_all = [];
@@ -514,22 +523,22 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
         numReturned= length(ids);
         assert(numReturned<=nTop); % if your searcher returns fewer, it's your fault
         
-%        thisRecall= cumsum( isPos(iTest, idss) ) > 0; % yahan se get karta hai %db.cp (close position)
-%        recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
-%         
-%        thisRecall1= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
-%        recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
-%        printRecalls(iTestSample)= thisRecall(printN);
-%         
-%        thisRecall_idx = find(thisRecall~=0, 1, 'first');
-%        thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
-%        fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
-%        if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
-%          if  ((thisRecall_idx-thisRecall1_idx) > 0 && thisRecall1_idx < 4) 
-%               fprintf('iTestSample: %i \n',iTestSample);
-%     
-%          end
-%        end
+       thisRecall= cumsum( isPos(iTest, idss) ) > 0; % yahan se get karta hai %db.cp (close position)
+       recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
+        
+       thisRecall1= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
+       recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
+       printRecalls(iTestSample)= thisRecall(printN);
+        
+       thisRecall_idx = find(thisRecall~=0, 1, 'first');
+       thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
+       fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
+       if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
+         if  ((thisRecall_idx-thisRecall1_idx) > 0 && thisRecall1_idx < 4) 
+              fprintf('iTestSample: %i \n',iTestSample);
+    
+         end
+       end
         if show_output == 45
                fprintf('iTestSample: %i \n',iTestSample);
                figure;
@@ -558,7 +567,7 @@ function [res, recalls, recalls_ori]= leo_recallAtN(searcher, nQueries, isPos, n
        
     end  
     t= toc(evalProg);
-    save('pslen-v11-pitts2oxford-data-4096.mat','data');
+    save('pslen-v12-vd16_tokyoTM2paris-data-4096.mat','data');
 
     res= mean(printRecalls);
     relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
