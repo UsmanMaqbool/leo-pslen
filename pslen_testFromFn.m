@@ -35,5 +35,5 @@ function [recall, rankloss, allRecalls, allRecalls_ori, opts]= pslen_testFromFn(
     else
         rankloss= [];
     end
-    [recall, allRecalls, allRecalls_ori]= leo_testCore(db, qFeat, dbFeat,plen_opts, 'nTestSample', opts.nTestSample, 'recallNs', opts.recallNs);
+    [recall, allRecalls, allRecalls_ori]= pslen_testCore(db, qFeat, dbFeat,plen_opts, 'nTestSample', opts.nTestSample, 'recallNs', opts.recallNs);
 end
