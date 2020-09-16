@@ -56,17 +56,17 @@ function plen_opts= pslen_settings(paths)
         query_folder = 'images';
     end
 
-    save_path = [];
-
-    save_pslen_data = strcat(pslen_directory,job_net,'_to_',pslen_on,'_vd16_data_',int2str(f_dimension),'.mat');
-    save_pslen_data_mdl = strcat(pslen_directory,'models/', job_net,'_to_',pslen_on,'_vd16_pslen_',int2str(f_dimension),'_mdls.mat');
+    
+    save_path = strcat(pslen_directory,job_net,'_to_',job_datasets,'_',int2str(f_dimension),'_',proj);
+    save_pslen_data = strcat(pslen_directory,'models/',job_net,'_to_',pslen_on,int2str(f_dimension),'_data.mat');
+    save_pslen_data_mdl = strcat(pslen_directory,'models/', job_net,'_to_',pslen_on,int2str(f_dimension),'_mdls.mat');
 
     save_path_all = strcat(pslen_directory,job_net,'_to_',job_datasets,'_box_50_plus','.mat');
         
     % Save result for tikz latex
     pslen_results_fname = strcat('results/',job_net,'_to_',job_datasets,'_pslen_',int2str(f_dimension),'.dat');
     netvlad_results_fname = strcat('results/',job_net,'_to_',job_datasets,'_netvlad_',int2str(f_dimension),'.dat');
-    
+    save_results = strcat('results/',job_net,'_to_',job_datasets,'_both_results_',int2str(f_dimension),'.dat');
     
     %% TOKYO DATASET
     %netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white'; % netID= 'caffe_tokyoTM_conv5_vlad_preL2_intra_white';
@@ -105,6 +105,7 @@ function plen_opts= pslen_settings(paths)
                 'job_net',              job_net, ...
                 'datasets_path',        datasets_path, ...
                 'save_path',            save_path, ...
+                'save_results',         save_results, ...
                 'save_path_all',        save_path_all, ...
                 'save_pslen_data',      save_pslen_data, ...
                 'save_pslen_data_mdl',  save_pslen_data_mdl, ...

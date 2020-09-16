@@ -33,16 +33,17 @@ if ~exist(pslen_config.save_pslen_data_mdl, 'file') && strcmp(pslen_config.pslen
         serialAllFeats(net, dbTest.dbPath, dbTest.dbImageFns, dbFeatFn, 'batchSize', 1); % adjust batchSize depending on your GPU / network size
     end
     
-    [~,~,~,~,~] = pslen_testFromFn(dbTest, dbFeatFn, qFeatFn, pslen_config, [], 'cropToDim', pslen_config.cropToDim);
-
+    pslen_testFromFn(dbTest, dbFeatFn, qFeatFn, pslen_config, [], 'cropToDim', pslen_config.cropToDim);
+    pslen_model(pslen_config) 
 end
 
 %% Whole Process
 
+dbTest = pslen_config.dbTest;
+
 qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);   % just to create the files in the out folder
 dbFeatFn = sprintf('%s%s_%s_db.bin', paths.outPrefix, netID, dbTest.name);  % just to create the files in the out folder
 
-dbTest = pslen_config.dbTest;
 
 % Create models if not available
 if ~exist(qFeatFn, 'file')
@@ -68,7 +69,7 @@ dlmwrite(pslen_config.pslen_results_fname,PSLEN_results,'delimiter',' ');
 dlmwrite(pslen_config.netvlad_results_fname,netvlad_results,'delimiter',' ');
 
 
-%save(char(save_results), 'recall','recallNs', 'recall_ori');
+save(char(pslen_config.save_results), 'recall','recallNs', 'recall_ori');
 pre = load(save_results);
 
 plot(opts.recallNs, pre.recall, 'bo-', ...

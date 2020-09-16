@@ -47,6 +47,10 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
     total_top = 100; %100;0
     inegatif_i = [];
 
+    %% Load PSLEN Model
+     if ~(pslen_config.createPslenModel)
+        g_mdl =  load(pslen_config.save_pslen_data_mdl);
+     end
     %% Start
     for iTestSample= iTestSample_Start:length(toTest)
         
@@ -342,7 +346,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
                  pslen_pridict = [crf_pre crf_h XX];
 
 
-                D_diff_predict = predict(g_mdl.mdls{2},pslen_pridict);
+                D_diff_predict = predict(g_mdl.mdls{4},pslen_pridict);
                 % D_diff_predict = predict(g_mdl{5}.mdls,pslen_pridict);
                 %D_diff_predict = 1;
                 %D_diff = D_diff+(prob_ds_All-mean_min_top)+D_diff_predict;%-mean(ds_pre_diff);
@@ -350,7 +354,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
                 %   D_diff = D_diff+D_diff_predict;%+prob_ds_All-mean_min_top;
                 % D_diff = D_diff/(0.5*exp(-1.*D_diff_predict));%-mean_min_top;
                 % end
-
+                
                 % D_diff = D_diff/D_diff_predict;
                 %  ds_new_top(i,1) = abs(D_diff);
                 D_diff = D_diff+exp(-1.*D_diff_predict); 
@@ -522,8 +526,8 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
 
     if (pslen_config.createPslenModel)
         save(pslen_config.save_pslen_data,'data');
-        fprintf( 'GT data is saved.')
-        return
+        res = [];
+        fprintf( 'GT data is saved. \n')
     else
         res= mean(printRecalls);
         relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
