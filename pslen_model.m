@@ -15,17 +15,12 @@ function pslen_model(pslen_config)
     % Decision tree
     mdls{1} = fitctree(Data,'HH112', ...
         'OptimizeHyperparameters','auto','HyperparameterOptimizationOptions', hypopts);
+    
     % Random fitrensemble
+    mdls{2} = TreeBagger(50,Data,'HH112','Method','regression',...
+    'OOBPrediction','On');
+
     
-    mdls{2} = fitrensemble(Data,'HH112');
-        
-    t = templateTree('MaxNumSplits',1);
-    mdls{3} = fitrensemble(Data,'HH112','Learners',t,'CrossVal','on');
-    
-    mdls{4} = TreeBagger(300,Data,'HH112,'Method','regression',...
-    'MinLeafSize',bestHyperparameters.minLS,...
-    'NumPredictorstoSample',bestHyperparameters.numPTS);
-  
     save(pslen_config.save_pslen_data_mdl,'mdls');
     fprintf( 'PSLEN Model is created. \n')
 end

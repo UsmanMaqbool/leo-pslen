@@ -57,23 +57,30 @@ if ~exist(qFeatFn, 'file')
 end
 
 % Use PSLEN model
-[~, ~,recall,recall_ori, opts]= pslen_testFromFn(dbTest, dbFeatFn, qFeatFn, pslen_config, [], 'cropToDim', pslen_config.cropToDim);
+[recalll, ~,recall,allrecalls_pslen, opts]= pslen_testFromFn(dbTest, dbFeatFn, qFeatFn, pslen_config, [], 'cropToDim', pslen_config.cropToDim);
 
 
 %% Results
-pslen_results = [opts.recallNs',recall_ori*100];
-netvlad_results = [opts.recallNs',ori.recall*100];
+
+netvlad_results = [opts.recallNs',recall*100];
+maqbool_results_D = [opts.recallNs',allrecalls_pslen(:,1)*100];
+maqbool_results_R = [opts.recallNs',allrecalls_pslen(:,2)*100];
+
+    pslen_config.maqbool_d_results_fname = strcat('results/vd16_tokyoTM_to_tokyo247_maqbool_D_512.dat');
+    pslen_config.maqbool_r_results_fname = strcat('results/vd16_tokyoTM_to_tokyo247_maqbool_R_512.dat');
 
 
-dlmwrite(pslen_config.pslen_results_fname,PSLEN_results,'delimiter',' ');
+
 dlmwrite(pslen_config.netvlad_results_fname,netvlad_results,'delimiter',' ');
+dlmwrite(pslen_config.maqbool_d_results_fname,maqbool_results_D,'delimiter',' ');
+dlmwrite(pslen_config.maqbool_r_results_fname,maqbool_results_R,'delimiter',' ');
 
+%recallNs = opts.recallNs';
+%save(pslen_config.save_results, 'recall','recallNs', 'recall_ori');
+%pre = load(pslen_config.save_results);
 
-save(char(pslen_config.save_results), 'recall','recallNs', 'recall_ori');
-pre = load(save_results);
-
-plot(opts.recallNs, pre.recall, 'bo-', ...
-     opts.recallNs, recall_ori, 'ro-' ,...
+plot(opts.recallNs, allrecalls_pslen(:,2), 'bo-', ...
+     opts.recallNs, allrecalls_pslen(:,1), 'ro-' ,...
      opts.recallNs, recall, 'go-' ...
      ); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none'); legend({'Previous Best','Original', 'New'});
 

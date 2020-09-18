@@ -1,4 +1,4 @@
-function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,pslen_config)
+function [res, recalls, recalls_pslen]= pslen_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,pslen_config)
     if nargin<6, nSample= inf; end
     
     rngState= rng;
@@ -14,7 +14,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
     nTop= max(ns);
     
     recalls= zeros(length(toTest), length(ns));
-    recalls_ori= zeros(length(toTest), length(ns));
+    recalls_pslen= zeros(length(toTest), length(ns),2);
     printRecalls= zeros(length(toTest),1);
 
     %% Load variables
@@ -63,11 +63,11 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
         iTest= toTest(iTestSample);
         
         [ids ds_pre]= searcher(iTest, nTop); % Main function to find top 100 candidaes
-        ds_pre_max = max(ds_pre); ds_pre_min = min(ds_pre);
-        ds_pre_mean = mean(ds_pre); ds_pre_var = var(ds_pre);
+       % ds_pre_max = max(ds_pre); ds_pre_min = min(ds_pre);
+       % ds_pre_mean = mean(ds_pre); ds_pre_var = var(ds_pre);
     
         ds = ds_pre - min(ds_pre(:));
-        ds = ds ./ max(ds(:)); 
+       % ds = ds ./ max(ds(:)); 
         
         % if oxford or otherplace datasets, we can get the recall like this
         if(pslen_config.createPslenModel)
@@ -102,18 +102,15 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
         q_feat = strrep(q_img,'.jpg','.mat');
 
             
-            if exist(q_feat, 'file')
-                 x_q_feat = load(q_feat);
-                 x_q_feat_all(iTestSample) = struct ('x_q_feat', x_q_feat); 
-            else
-                
-                
-                
-                q_feat = leo_estimate_box_features(qimg_path,model,db,q_feat,net,num_box,total_top,dataset_path,ids,iTestSample);
-                 x_q_feat = load(q_feat);
+        if exist(q_feat, 'file')
+             x_q_feat = load(q_feat);
+             x_q_feat_all(iTestSample) = struct ('x_q_feat', x_q_feat); 
+        else
 
+            q_feat = leo_estimate_box_features(qimg_path,model,db,q_feat,net,num_box,total_top,dataset_path,ids,iTestSample);
+            x_q_feat = load(q_feat);
 
-            end
+        end
 
         total_top = size(ids,1); %100;0
     
@@ -138,11 +135,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
         end
         ds_box_all_sum = sum(x_q_feat_ds_all(:));
         
-       
-        
-        %Prod_ds_box = exp_ds_pre/ds_box_all_sum;
-        
-        
+    
         
         for i=startfrom:total_top 
  
@@ -151,12 +144,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
            x_q_feat_ds_all = x_q_feat.ds_all_file(i).ds_all_full; %51*50         first match ka box
            x_q_feat_box_q =  x_q_feat.q_bbox;                       %51*5
            x_q_feat_box_db = x_q_feat.db_bbox_file(i).bboxdb;       % 51*5
-%           x_q_feat_ids_all = x_q_feat.ids_all_file(i).ids_all ; 
-           
-           
-           % Full File Load
-           
-          %x_q_feat.ds_all_file(1).ds_all_full  ;
+
            
            x_q_feat_ds_all_exp = exp(-1.*x_q_feat_ds_all); % jj first match
             
@@ -168,56 +156,22 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
            ds_all = x_q_feat_ds_all(2:end,:);  
            [ds_all_sort ds_all_sort_index] = sort(ds_all);
           
-           
-           %drawRectangle(image, Xmin, Ymin, width, height)
-           %img = drawRectangle(I, bb(2), bb(1), bb(4), bb(3));
-           
-           imgg_mat_box_q =  x_q_feat_box_q; %(2:num_box+1,:);    
-           imgg_mat_box_db = x_q_feat_box_db; %(2:num_box+1,:);
-            
-           
-           x_q_feat_ds_all_1 = x_q_feat_ds_all(:,1);
-           x_q_feat_ds_all_1 = x_q_feat_ds_all_1-x_q_feat_ds_all_1(1,1);
-            % original dis: 1.25 ds_pre
-            db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(i,1),1});  
-            
-            ds_pre_inv = 1/ ds_pre(i,1);
-            
-            ds_all_inv = 1./(ds_all);
-            
-            diff_ds_all = zeros(Top_boxes,Top_boxes);
-            %diff_ds_all(1:Top_boxes-1,:) = diff(ds_all);
-
             diff2_ds_all = diff(diff(ds_all));
             diff2_ds_all_less = diff2_ds_all;
-            diff2_ds_all_less(diff2_ds_all_less>0) = 0;
-        
-            
-            ds_all_sub = ds_all(2:Top_boxes,:);
-            
+
             
             ds_all_less = x_q_feat_ds_all-max(ds_pre(:));
 
             s=sign(ds_all_less); 
             
-            ipositif=sum(s(:)==1);
             inegatif=sum(s(:)==-1);
-            inegatif_i=[inegatif_i ;inegatif];
 
             S_less = s; S_less(S_less>0) = 0; 
             S_less = abs(S_less).*x_q_feat_ds_all; 
-            S_less_Nr = normalize(S_less,'range');
          
             
-            D_diff = ds_pre(i,1); %-s_delta_all;
+            D_diff = ds_pre(i,1); 
             
-            if i > 1
-                   relative_diff =  ds_pre(i,1) - ds_pre(i-1,1);
-            else
-                   relative_diff =  ds_pre(i+1,1) - ds_pre(i,1);
-            end
-      
-            %exp_relative_diff = exp(-1.*relative_diff); %*exp_related_Box_dis;
             exp_relative_diff = exp(-1.*ds_pre_diff(i,1)); %*exp_related_Box_dis;
                            
            [row,col] = size(x_q_feat_ds_all);    
@@ -262,15 +216,11 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
 
                 end
            end
-           
-            
-           %% TODO %%%% multiply with exp(-min(ds_all_sort_10(:));
-           
+                
          
            ds_all_box_sorted = zeros(num_box,num_box);
            S_less_Nr_sorted = zeros(num_box,num_box);
-          % [ds_all_sort ds_all_sort_index] = sort(ds_all_s_less);
-           %ds_all_sort_10 = ds_all_sort(2:Top_boxes+1,1:Top_boxes); 
+ 
            for jj = 1: num_box
                for ii = 1 : num_box
                     ii_index = ds_all_sort_index(ii,jj);
@@ -281,11 +231,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
            end
            
            ds_all_s_less = ds_all_box_sorted.*ds_all_less_sorted; 
-           
-              
-            
-            S_less_diff = diff(S_less_sorted);
-                    
+                            
 
             S1 = S_less_sorted; 
             S1_mean = sum(S1(:))/nnz(S1);
@@ -299,7 +245,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
             
             
             S1_logical = logical(S1);
-            ds_all_s_less_s1 = S1_logical.*ds_all_s_less;
+%             ds_all_s_less_s1 = S1_logical.*ds_all_s_less;
             ds_all_s_less_s1_sub = ds_all_s_less(1:Top_boxes,1:Top_boxes);
             
             min_ds_all = S_less_sorted(1:Top_boxes,1:Top_boxes);
@@ -313,27 +259,7 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
 
             Pslen_mat = prob_ds_pre_sum*ds_all_s_less_s1_sub;
             
-            
-            % prob_ds_All = sum(sum(ds_all(2:Top_boxes+1,1:Top_boxes)));
-            %  prob_ds_All = sum(Pslen_mat(:));
-            % ds_all input
-
-            mean_min_top = exp(-1.*mean(x_q_feat_ds_all(1,1:10))); 
-
-
-
-
-
-
-            %  D_diff = D_diff+prob_ds_All-mean_min_top;%-mean(ds_pre_diff);
-
-            % prob_q_db(i,1) = D_diff;
-            % ds_pre_1(i,1) = D_diff;    
-
-
-
-            % pslen_ds_all=reshape(Pslen_table(:,16),10,10);
-            %  pslen_ds_all=Pslen_table(:,16);
+         
 
             crf_h = x_q_feat_ds_all(1,1:10);%double(pslen_ds_all(1,:));
             crf_X = Pslen_mat;%double(pslen_ds_all(2:11,:));
@@ -346,20 +272,17 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
                  pslen_pridict = [crf_pre crf_h XX];
 
 
-                D_diff_predict = predict(g_mdl.mdls{4},pslen_pridict);
-                % D_diff_predict = predict(g_mdl{5}.mdls,pslen_pridict);
-                %D_diff_predict = 1;
-                %D_diff = D_diff+(prob_ds_All-mean_min_top)+D_diff_predict;%-mean(ds_pre_diff);
-                %if D_diff_predict==2
-                %   D_diff = D_diff+D_diff_predict;%+prob_ds_All-mean_min_top;
-                % D_diff = D_diff/(0.5*exp(-1.*D_diff_predict));%-mean_min_top;
-                % end
+
+                %store ds_pre
+                ds_new_top(i,1) = ds_pre(i,1);
                 
-                % D_diff = D_diff/D_diff_predict;
-                %  ds_new_top(i,1) = abs(D_diff);
-                D_diff = D_diff+exp(-1.*D_diff_predict); 
-                %  ds_new_top(i,1) = D_diff;
-                ds_new_top(i,1) = abs(D_diff);
+                D_diff_predict = predict(g_mdl.mdls{1},pslen_pridict);
+                ds_new_top(i,2) = abs(D_diff/D_diff_predict);
+                D_diff_predict = predict(g_mdl.mdls{6},pslen_pridict);
+                ds_new_top(i,3) = abs(D_diff/D_diff_predict);
+                
+
+                
                 Pslen_table = [];
 
                 ds_all = [];
@@ -373,152 +296,74 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
    
         
         if ~(pslen_config.createPslenModel)
-            [C c_i] = sortrows(ds_new_top);
+            
+           for j = 1:size(ds_new_top,2)
+    
+                [C c_i] = sortrows(ds_new_top(:,j));
+                ids_new = ids;
+               % inegatifss = inegatif_i;
+                for i=1:total_top
+                    ids_new(i,1) = ids(c_i(i,1));
+                   % inegatifss(i,1) = inegatif_i(c_i(i,1));
+                end
+            %     if show_output == 3
+            % 
+            %             subplot(2,6,1); imshow(imread(char(qimg_path))); %q_img
+            %             db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{ids(1,1),1});  
+            %             db_imgo2 = strcat(dataset_path,'/images/', db.dbImageFns{ids(2,1),1});  
+            %             db_imgo3 = strcat(dataset_path,'/images/', db.dbImageFns{ids(3,1),1});  
+            %             db_imgo4 = strcat(dataset_path,'/images/', db.dbImageFns{ids(4,1),1});  
+            %             db_imgo5 = strcat(dataset_path,'/images/', db.dbImageFns{ids(5,1),1});  
+            %             db_img1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(1,1),1});  
+            %             db_img2 = strcat(dataset_path,'/images/', db.dbImageFns{idss(2,1),1});  
+            %             db_img3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(3,1),1});
+            %             db_img4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(4,1),1});
+            %             db_img5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(5,1),1});
+            % 
+            %             subplot(2,6,2); imshow(imread(char(db_imgo1))); %
+            %             aa = strcat(string(ds_pre(1,1)));title(aa)
+            % 
+            %             subplot(2,6,3); imshow(imread(char(db_imgo2))); %
+            %             aa = strcat(string(ds_pre(2,1)));title(aa)
+            % 
+            %             subplot(2,6,4); imshow(imread(char(db_imgo3))); %
+            %             aa = strcat(string(ds_pre(3,1)));title(aa)
+            % 
+            %             subplot(2,6,5); imshow(imread(char(db_imgo4))); %
+            %             aa = strcat(string(ds_pre(4,1)));title(aa)
+            % 
+            %             subplot(2,6,6); imshow(imread(char(db_imgo5))); %
+            %             aa = strcat(string(ds_pre(5,1)));title(aa)
+            % 
+            % 
+            %             subplot(2,6,8); imshow(imread(char(db_img1))); %
+            %             aa = strcat(string(ds_new_top(1,1)), '->', string(prob_q_db(1,1)));title(aa)
+            %             subplot(2,6,9); imshow(imread(char(db_img2))); %
+            %             aa = strcat(string(ds_new_top(2,1)), '->', string(prob_q_db(1,1)));title(aa)
+            %             subplot(2,6,10); imshow(imread(char(db_img3))); %
+            %             aa = strcat(string(ds_new_top(3,1)), '->', string(prob_q_db(1,1)));title(aa)
+            %             subplot(2,6,11); imshow(imread(char(db_img4))); %
+            %             aa = strcat(string(ds_new_top(4,1)), '->', string(prob_q_db(1,1)));title(aa)
+            %             subplot(2,6,12); imshow(imread(char(db_img5))); %
+            %             aa = strcat(string(ds_new_top(5,1)), '->', string(prob_q_db(1,1)));title(aa)
+            % 
+            %             %fprintf( '==>> %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1));
+            % 
+            %      end
 
-            idss = ids;
-            inegatifss = inegatif_i;
-            for i=1:total_top
-                idss(i,1) = ids(c_i(i,1));
-                inegatifss(i,1) = inegatif_i(c_i(i,1));
+               numReturned= length(ids);
+               assert(numReturned<=nTop); % if your searcher returns fewer, it's your fault
 
+               thisRecall= cumsum( isPos(iTest, ids_new) ) > 0; % yahan se get karta hai %db.cp (close position)
+               if j == 1
+                    recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
+               else
+                    recalls_pslen(iTestSample,:, j-1)= thisRecall( min(ns, numReturned) );
+               end
+
+              printRecalls(iTestSample)= thisRecall(printN);
             end
-             if show_output == 3
-
-                    subplot(2,6,1); imshow(imread(char(qimg_path))); %q_img
-                    db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{ids(1,1),1});  
-                    db_imgo2 = strcat(dataset_path,'/images/', db.dbImageFns{ids(2,1),1});  
-                    db_imgo3 = strcat(dataset_path,'/images/', db.dbImageFns{ids(3,1),1});  
-                    db_imgo4 = strcat(dataset_path,'/images/', db.dbImageFns{ids(4,1),1});  
-                    db_imgo5 = strcat(dataset_path,'/images/', db.dbImageFns{ids(5,1),1});  
-                    db_img1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(1,1),1});  
-                    db_img2 = strcat(dataset_path,'/images/', db.dbImageFns{idss(2,1),1});  
-                    db_img3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(3,1),1});
-                    db_img4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(4,1),1});
-                    db_img5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(5,1),1});
-
-                    subplot(2,6,2); imshow(imread(char(db_imgo1))); %
-                    aa = strcat(string(ds_pre(1,1)));title(aa)
-
-                    subplot(2,6,3); imshow(imread(char(db_imgo2))); %
-                    aa = strcat(string(ds_pre(2,1)));title(aa)
-
-                    subplot(2,6,4); imshow(imread(char(db_imgo3))); %
-                    aa = strcat(string(ds_pre(3,1)));title(aa)
-
-                    subplot(2,6,5); imshow(imread(char(db_imgo4))); %
-                    aa = strcat(string(ds_pre(4,1)));title(aa)
-
-                    subplot(2,6,6); imshow(imread(char(db_imgo5))); %
-                    aa = strcat(string(ds_pre(5,1)));title(aa)
-
-
-                    subplot(2,6,8); imshow(imread(char(db_img1))); %
-                    aa = strcat(string(ds_new_top(1,1)), '->', string(prob_q_db(1,1)));title(aa)
-                    subplot(2,6,9); imshow(imread(char(db_img2))); %
-                    aa = strcat(string(ds_new_top(2,1)), '->', string(prob_q_db(1,1)));title(aa)
-                    subplot(2,6,10); imshow(imread(char(db_img3))); %
-                    aa = strcat(string(ds_new_top(3,1)), '->', string(prob_q_db(1,1)));title(aa)
-                    subplot(2,6,11); imshow(imread(char(db_img4))); %
-                    aa = strcat(string(ds_new_top(4,1)), '->', string(prob_q_db(1,1)));title(aa)
-                    subplot(2,6,12); imshow(imread(char(db_img5))); %
-                    aa = strcat(string(ds_new_top(5,1)), '->', string(prob_q_db(1,1)));title(aa)
-
-                    %fprintf( '==>> %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1));
-
-             end
-
-             if show_output == 33
-
-                    subplot(2,6,1); imshow(imread(char(qimg_path))); %q_img
-                    db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(1,1),1});  
-                    db_imgo2 = strcat(dataset_path,'/images/', db.dbImageFns{idss(2,1),1});  
-                    db_imgo3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(3,1),1});
-                    db_imgo4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(4,1),1});
-                    db_imgo5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(5,1),1});
-                    db_img1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(6,1),1});  
-                    db_img2 = strcat(dataset_path,'/images/', db.dbImageFns{idss(7,1),1});  
-                    db_img3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(8,1),1});  
-                    db_img4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(9,1),1});  
-                    db_img5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(10,1),1});  
-
-                    subplot(2,6,2); imshow(imread(char(db_imgo1))); %
-                    aa = strcat(string(ds_new_top(1,1)), '->', string(prob_q_db(1,1)));title(aa)
-                    subplot(2,6,3); imshow(imread(char(db_imgo2))); %
-                    aa = strcat(string(ds_new_top(2,1)), '->', string(prob_q_db(2,1)));title(aa)
-                    subplot(2,6,4); imshow(imread(char(db_imgo3))); %
-                    aa = strcat(string(ds_new_top(3,1)), '->', string(prob_q_db(3,1)));title(aa)
-                    subplot(2,6,5); imshow(imread(char(db_imgo4))); %
-                    aa = strcat(string(ds_new_top(4,1)), '->', string(prob_q_db(4,1)));title(aa)
-                    subplot(2,6,6); imshow(imread(char(db_imgo5))); %
-                    aa = strcat(string(ds_new_top(5,1)), '->', string(prob_q_db(5,1)));title(aa)
-                    subplot(2,6,8); imshow(imread(char(db_img1))); %
-                    aa = strcat(string(ds_new_top(6,1)), '->', string(prob_q_db(6,1)));title(aa)
-                    subplot(2,6,9); imshow(imread(char(db_img2))); %
-                    aa = strcat(string(ds_new_top(7,1)), '->', string(prob_q_db(7,1)));title(aa)
-                    subplot(2,6,10); imshow(imread(char(db_img3))); %
-                    aa = strcat(string(ds_new_top(8,1)), '->', string(prob_q_db(8,1)));title(aa)
-                    subplot(2,6,11); imshow(imread(char(db_img4))); %
-                    aa = strcat(string(ds_new_top(9,1)), '->', string(prob_q_db(9,1)));title(aa)
-                    subplot(2,6,12); imshow(imread(char(db_img5))); %
-                    aa = strcat(string(ds_new_top(10,1)), '->', string(prob_q_db(10,1)));title(aa)
-    %                fprintf( '==>> %f %f %f %f %f %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1), c_i(6,1), c_i(7,1),c_i(8,1), c_i(9,1) ,c_i(10,1));
-
-             end
-
-
-            iTestSample
-            %% LEO END
-
-
-
-
-
-
-
-            numReturned= length(ids);
-            assert(numReturned<=nTop); % if your searcher returns fewer, it's your fault
-
-           thisRecall= cumsum( isPos(iTest, idss) ) > 0; % yahan se get karta hai %db.cp (close position)
-           recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
-
-           thisRecall1= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
-           recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
-           printRecalls(iTestSample)= thisRecall(printN);
-
-           thisRecall_idx = find(thisRecall~=0, 1, 'first');
-           thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
-           fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
-           if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
-             if  ((thisRecall_idx-thisRecall1_idx) > 0 && thisRecall1_idx < 4) 
-                  fprintf('iTestSample: %i \n',iTestSample);
-
-             end
-           end
-            if show_output == 45
-                   fprintf('iTestSample: %i \n',iTestSample);
-                   figure;
-                   subplot(2,2,1);
-                   plot(box_var_db(c_i(1,1),:), 'ro-'); hold on
-                   plot(box_var_db(c_i(2,1),:), 'ro-'); hold on
-                   plot(box_var_db(c_i(3,1),:), 'ro-'); hold on
-                   plot(box_var_db(c_i(4,1),:), 'ro-'); hold on
-                   plot(box_var_db(c_i(5,1),:), 'ro-'); hold on
-                   plot(box_var_db(c_i(thisRecall_idx,1),:), 'go-'); hold on
-                   plot(box_var_db(thisRecall1_idx,:), 'bo-'); hold on
-                    subplot(2,2,2);imshow(imread(char(qimg_path)));
-
-                     subplot(2,2,3);  
-                     db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{ids(c_i(thisRecall_idx,1),1),1});  
-                     imshow(imread(char(db_imgo1))); %
-                      subplot(2,2,4);  
-                     db_imgo2 = strcat(dataset_path,'/images/', db.dbImageFns{ids(thisRecall1_idx,1),1});  
-                     imshow(imread(char(db_imgo2))); %
-            end
-    %        if thisRecall(1) == 0
-    %          fprintf('iTestSample: %i \n',iTestSample);
-    %             plot(ns, recalls(1:iTestSample,:), 'ro-',ns, recalls_ori(1:iTestSample,:), 'go-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
-    % 
-    %        end
+           
         end
     end
     
@@ -532,54 +377,36 @@ function [res, recalls, recalls_ori]= pslen_recallAtN(searcher, nQueries, isPos,
         res= mean(printRecalls);
         relja_display('\n\trec@%d= %.4f, time= %.4f s, avgTime= %.4f ms\n', printN, res, t, t*1000/length(toTest));
         relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');
+        relja_display('%03d %.4f\n', [ns(:), mean(recalls,1)']');
         rng(rngState);
     end
 end
 
-   
-
-function plot_mat(A)
-lowestValue = min(A(A(:)>0));
-highestValue = max(A(:));
-imagesc(A);
-cmap = jet(256);
-colormap(cmap);
-caxis(gca,[lowestValue-2/256, highestValue]);
-% Make less than lowest value black:
-cmap(1,:)=[0,0,0];
-colormap(cmap)
-caxis([-0.2 0.2]);
-colorbar
-end
-
 function [mat_boxes,im, edge_image, hyt, wyd] = img_Bbox(db_img,model)
-im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-I = uint8(im{1,1});
-[bbox, E] =edgeBoxes(I,model);
-[hyt, wyd] = size(im{1,1});
-edge_image = uint8(E * 255);
-bboxes=[];
-gt=[111	98	25	101];
+    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
+    I = uint8(im{1,1});
+    [bbox, E] =edgeBoxes(I,model);
+    [hyt, wyd] = size(im{1,1});
+    edge_image = uint8(E * 255);
+    bboxes=[];
+    gt=[111	98	25	101];
 
-b_size = size(bbox,1); 
-for ii=1:b_size
-     bb=bbox(ii,:);
-     square = bb(3)*bb(4);
-     if square <2*gt(3)*gt(4)
-        bboxes=[bbox;bb];
-     end
-end
+    b_size = size(bbox,1); 
+    for ii=1:b_size
+         bb=bbox(ii,:);
+         square = bb(3)*bb(4);
+         if square <2*gt(3)*gt(4)
+            bboxes=[bbox;bb];
+         end
+    end
 
-mat_boxes = uint8(bboxes); 
+    mat_boxes = uint8(bboxes); 
 end
 
 function img = draw_boxx(I,bb)
 
-%5bb=[bb(1) bb(2) bb(3)+bb(1) bb(4)+bb(2)];
-
-%img = insertShape(I,'Rectangle',bb,'LineWidth',3);
-
-%drawRectangle(image, Xmin, Ymin, width, height)
-img = drawRectangle(I, bb(2), bb(1), bb(4), bb(3));
+    %img = insertShape(I,'Rectangle',bb,'LineWidth',3);
+    %drawRectangle(image, Xmin, Ymin, width, height)
+    img = drawRectangle(I, bb(2), bb(1), bb(4), bb(3));
 
 end

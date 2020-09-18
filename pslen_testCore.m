@@ -1,4 +1,4 @@
-function [recalls, allRecalls, allRecalls_ori]= pslen_testCore(db, qFeat, dbFeat, plen_opts,varargin)
+function [recalls, allRecalls, allrecalls_maqbool]= pslen_testCore(db, qFeat, dbFeat, plen_opts,varargin)
     opts= struct(...
         'nTestSample', inf, ...
         'recallNs', [1:5, 10:5:100], ...
@@ -12,12 +12,11 @@ function [recalls, allRecalls, allRecalls_ori]= pslen_testCore(db, qFeat, dbFeat
     else
         searcherRAW= searcherRAW_;
     end
-    [res, recalls, recalls_ori]= pslen_recallAtN( searcherRAW, db.numQueries,  @(iQuery, iDb) db.isPosQ(iQuery, iDb), opts.recallNs, opts.printN, opts.nTestSample,db,plen_opts);
+    [res, recalls, recalls_pslen]= pslen_recallAtN( searcherRAW, db.numQueries,  @(iQuery, iDb) db.isPosQ(iQuery, iDb), opts.recallNs, opts.printN, opts.nTestSample,db,plen_opts);
     
     allRecalls= recalls;
     allRecalls= mean( allRecalls, 1 )';
     
-    allRecalls_ori= recalls_ori;
-    allRecalls_ori= mean( allRecalls_ori, 1 )';
-    
+    allrecalls_pslen= recalls_pslen;
+    allrecalls_maqbool= [mean(allrecalls_pslen(:,:,1),1 )' mean(allrecalls_pslen(:,:,2),1 )'];
 end
